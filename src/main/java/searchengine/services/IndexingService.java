@@ -2,6 +2,9 @@ package searchengine.services;
 
 public interface IndexingService {
 
-   void startIndexing();
-   void stopIndexing();
+    void startIndexing();
+
+    void stopIndexing();
+
+    boolean statusIndexing();
 }

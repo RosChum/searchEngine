@@ -15,10 +15,9 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import java.util.concurrent.RecursiveTask;
 
-public class SiteIndexMap extends RecursiveTask<Site> implements Runnable {
+public class SiteIndexMap extends RecursiveTask<Site> {
 
     private String url;
     private String childUrl;
@@ -101,10 +100,6 @@ public class SiteIndexMap extends RecursiveTask<Site> implements Runnable {
     }
 
 
-    @Override
-    public void run() {
-        compute();
-    }
 }
 
 
