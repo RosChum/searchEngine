@@ -9,6 +9,8 @@ import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -78,6 +80,32 @@ public class IndexingServiceImpl implements IndexingService {
 
     }
 
+    @Override
+    public List<Site> getListSiteIndexing() {
+        return new ArrayList<>(siteRepository.findAll());
+    }
+
+    @Override
+    public void indexPage(String url) {
+        Site site = new Site();
+
+        siteRepository.delete(siteRepository.findByUrl(url));
+
+        searchengine.config.Site siteFromConfig = sitesList.getSites().stream()
+                .filter(site1 -> site1.getUrl().contains(url.substring(url.indexOf("//"), url.lastIndexOf(".")))).findFirst().get();
+        System.out.println(siteFromConfig.getUrl());
+        site.setName(siteFromConfig.getName());
+        site.setUrl(siteFromConfig.getUrl());
+        site.setStatus(IndexingStatus.INDEXING);
+        site.setStatusTime(LocalDateTime.now());
+        site.setLastError(null);
+
+        siteRepository.save(site);
+
+        walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site);
+
+    }
+
 
     private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site) {
         SiteIndexMap siteIndexMap = new SiteIndexMap(urlSite, siteRepository, pageRepository, site);
@@ -86,6 +114,12 @@ public class IndexingServiceImpl implements IndexingService {
         if (site1.getStatus() != IndexingStatus.FAILED) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());
         }
+
+    }
+
+
+    private void addLemmaEndIndexDB() {
+
 
     }
 
