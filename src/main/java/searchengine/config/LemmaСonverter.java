@@ -12,13 +12,9 @@ import java.util.Locale;
 
 public class LemmaСonverter {
 
-    private String text;
+
     private HashMap<String, Integer> result;
 
-    public LemmaСonverter(String text) {
-        this.text = text;
-
-    }
 
     public HashMap<String, Integer> convertTextToLemmas(String text) throws IOException {
 
@@ -26,10 +22,11 @@ public class LemmaСonverter {
 
         LuceneMorphology luceneMorph = new RussianLuceneMorphology();
 
-        String[] splitText = text.toLowerCase(Locale.ROOT).replaceAll("[^A-Za-zА-Яа-яЁё0-9\\s]", "")
+        String[] splitText = text.toLowerCase(Locale.ROOT).replaceAll("[^А-Яа-яЁё\\s]", "")
                 .split("\\s");
 
         for (String s : splitText) {
+            if (s.isEmpty()) continue;
             List<String> wordBaseForms = luceneMorph.getMorphInfo(s);
             wordBaseForms.stream().filter(word -> !word.matches(".*ЧАСТ.*|.*МЕЖД.*|.*ПРЕДЛ.*|.*СОЮЗ.*"))
                     .map(word -> word.substring(0, word.lastIndexOf('|'))).forEach(word -> {
@@ -45,10 +42,10 @@ public class LemmaСonverter {
         return result;
     }
 
-    private String clearingPageTags(String text){
+    public String clearingPageTags(String text) {
 
         Document document = Jsoup.parse(text);
 
-        return  document.text();
+        return document.text();
     }
 }

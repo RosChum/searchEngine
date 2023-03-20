@@ -2,9 +2,12 @@ package searchengine.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import searchengine.config.LemmaСonverter;
 import searchengine.config.SitesList;
 import searchengine.model.IndexingStatus;
 import searchengine.model.Site;
+import searchengine.repository.IndexSearchRepository;
+import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 
@@ -24,12 +27,17 @@ public class IndexingServiceImpl implements IndexingService {
     private SitesList sitesList;
     private ForkJoinPool forkJoinPool;
     private ThreadPoolExecutor threadPoolExecutor;
+    private LemmaRepository lemmaRepository;
+    private IndexSearchRepository indexSearchRepository;
 
     @Autowired
-    public IndexingServiceImpl(SiteRepository siteRepository, PageRepository pageRepository, SitesList sitesList) {
+    public IndexingServiceImpl(SiteRepository siteRepository, PageRepository pageRepository, SitesList sitesList,
+                               LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.sitesList = sitesList;
+        this.lemmaRepository = lemmaRepository;
+        this.indexSearchRepository = indexSearchRepository;
 
     }
 
@@ -49,7 +57,7 @@ public class IndexingServiceImpl implements IndexingService {
             site.setLastError(null);
             siteRepository.save(site);
 
-            threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site));
+            threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository));
 
         });
 
@@ -102,13 +110,14 @@ public class IndexingServiceImpl implements IndexingService {
 
         siteRepository.save(site);
 
-        walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site);
+        walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site, lemmaRepository,indexSearchRepository);
 
     }
 
 
-    private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site) {
-        SiteIndexMap siteIndexMap = new SiteIndexMap(urlSite, siteRepository, pageRepository, site);
+    private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site,
+                                  LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
+        SiteIndexMap siteIndexMap = new SiteIndexMap(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
         forkJoinPool = new ForkJoinPool();
         Site site1 = forkJoinPool.invoke(siteIndexMap);
         if (site1.getStatus() != IndexingStatus.FAILED) {
@@ -117,11 +126,6 @@ public class IndexingServiceImpl implements IndexingService {
 
     }
 
-
-    private void addLemmaEndIndexDB() {
-
-
-    }
 
 
 }
