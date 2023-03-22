@@ -36,6 +36,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     private Lemma lemma;
     private LemmaСonverter lemmaСonverter;
 
+
     public SiteIndexMap(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site, LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         this.url = url;
         this.siteRepository = siteRepository;
@@ -65,7 +66,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                     Connection.Response responseCode = document.connection().response();
 
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
-                    System.out.println(document.text());
+
                     addLemmaEndIndexDB(document.text(), site);
 
 
@@ -116,20 +117,25 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     }
 
     private synchronized void addLemmaEndIndexDB(String text, Site site) {
-         lemmaСonverter = new LemmaСonverter();
+
+        lemmaСonverter = new LemmaСonverter();
+        List<Lemma> lemmaList = new ArrayList<>();
+
         try {
 
-            System.out.println("START CONVERT");
             HashMap<String, Integer> lemmas = lemmaСonverter.convertTextToLemmas(text);
             lemmas.forEach((keyLemma, value) -> {
+
                 lemma = new Lemma();
                 lemma.setLemma(keyLemma);
                 lemma.setSite(site);
                 lemma.setFrequency(value);
-                lemmaRepository.save(lemma);
-            } );
+                lemmaList.add(lemma);
 
-            System.out.println("LEMMA SAVE" + lemma.toString());
+            });
+
+            lemmaRepository.saveAll(lemmaList);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
