@@ -67,8 +67,9 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
 
-                    addLemmaEndIndexDB(document.text(), site);
-
+                    if (responseCode.statusCode() == 200) {
+                        addLemmaEndIndexDB(document.text(), site);
+                    }
 
                     siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
 
@@ -116,13 +117,11 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                 !pageRepository.existsByPath(url.substring(site.getUrl().length()));
     }
 
-    private synchronized void addLemmaEndIndexDB(String text, Site site) {
+    private void addLemmaEndIndexDB(String text, Site site) {
 
         lemmaСonverter = new LemmaСonverter();
-        List<Lemma> lemmaList = new ArrayList<>();
 
         try {
-
             HashMap<String, Integer> lemmas = lemmaСonverter.convertTextToLemmas(text);
             lemmas.forEach((keyLemma, value) -> {
 
@@ -130,17 +129,17 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                 lemma.setLemma(keyLemma);
                 lemma.setSite(site);
                 lemma.setFrequency(value);
-                lemmaList.add(lemma);
 
+                if (lemmaRepository.findByLemmaAndSite(keyLemma, site) != null) {
+                    lemmaRepository.updateFrequency(keyLemma, lemmaRepository.findByLemma(keyLemma).getFrequency() + 1, site);
+                } else {
+                    lemmaRepository.save(lemma);
+                }
             });
-
-            lemmaRepository.saveAll(lemmaList);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
 
 

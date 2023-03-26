@@ -2,7 +2,6 @@ package searchengine.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import searchengine.config.LemmaСonverter;
 import searchengine.config.SitesList;
 import searchengine.model.IndexingStatus;
 import searchengine.model.Site;
@@ -57,8 +56,8 @@ public class IndexingServiceImpl implements IndexingService {
             site.setLastError(null);
             siteRepository.save(site);
 
-            threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository));
-
+            threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository,
+                    pageRepository, site, lemmaRepository, indexSearchRepository));
         });
 
         threadPoolExecutor.shutdown();
@@ -110,10 +109,10 @@ public class IndexingServiceImpl implements IndexingService {
 
         siteRepository.save(site);
 
-        walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site, lemmaRepository,indexSearchRepository);
+        walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
+
 
     }
-
 
     private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site,
                                   LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
@@ -125,7 +124,5 @@ public class IndexingServiceImpl implements IndexingService {
         }
 
     }
-
-
 
 }

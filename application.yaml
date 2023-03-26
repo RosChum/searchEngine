@@ -10,14 +10,18 @@ spring:
   jpa:
     properties:
       hibernate:
-        generate_statistics: true
-        order_inserts: true
-        jdbc:
-          batch_size: 4000
+#        generate_statistics: true
+#        order_inserts: true
+#        jdbc:
+#          batch_size: 4000
       dialect: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+
+#logging:
+#  level:
+#    root: trace
 
 
 
