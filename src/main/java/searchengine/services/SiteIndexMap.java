@@ -34,7 +34,8 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     private LemmaRepository lemmaRepository;
     private IndexSearchRepository indexSearchRepository;
     private Lemma lemma;
-    private LemmaСonverter lemmaСonverter;
+    private LemmaСonverter lemmaСonverter = new LemmaСonverter();
+    ;
 
 
     public SiteIndexMap(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site, LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
@@ -67,13 +68,13 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
 
-                    if (responseCode.statusCode() == 200) {
-                        addLemmaEndIndexDB(document.text(), site);
-                    }
-
                     siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
 
+                    if (responseCode.statusCode() == 200)
+                        addLemmaEndIndexDB(document.text(), site);
+
                     System.out.println(Thread.currentThread().getId() + " ->> " + childUrl);
+
                     SiteIndexMap siteIndexMap = new SiteIndexMap(childUrl, siteRepository, pageRepository, site,
                             lemmaRepository, indexSearchRepository);
 
@@ -96,6 +97,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
             siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, exception.toString(), LocalDateTime.now());
             return site;
         }
+
         invokeAll(task);
         return site;
     }
@@ -117,9 +119,9 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                 !pageRepository.existsByPath(url.substring(site.getUrl().length()));
     }
 
-    private void addLemmaEndIndexDB(String text, Site site) {
+    private synchronized void addLemmaEndIndexDB(String text, Site site) {
 
-        lemmaСonverter = new LemmaСonverter();
+//        lemmaСonverter = new LemmaСonverter();
 
         try {
             HashMap<String, Integer> lemmas = lemmaСonverter.convertTextToLemmas(text);
@@ -128,10 +130,12 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                 lemma = new Lemma();
                 lemma.setLemma(keyLemma);
                 lemma.setSite(site);
-                lemma.setFrequency(value);
+                lemma.setFrequency(1);
 
-                if (lemmaRepository.findByLemmaAndSite(keyLemma, site) != null) {
-                    lemmaRepository.updateFrequency(keyLemma, lemmaRepository.findByLemma(keyLemma).getFrequency() + 1, site);
+                if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
+
+                    lemmaRepository.updateFrequency(keyLemma);
+
                 } else {
                     lemmaRepository.save(lemma);
                 }

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class IndexingServiceImpl implements IndexingService {
@@ -59,6 +60,7 @@ public class IndexingServiceImpl implements IndexingService {
             threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository,
                     pageRepository, site, lemmaRepository, indexSearchRepository));
         });
+
 
         threadPoolExecutor.shutdown();
         threadPoolExecutor.getQueue().clear();

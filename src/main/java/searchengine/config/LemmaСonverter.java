@@ -26,17 +26,17 @@ public class LemmaСonverter {
                 .split("\\s");
 
         for (String s : splitText) {
-            if (s.isEmpty()) continue;
+            if (s.isEmpty() || !luceneMorph.checkString(s)) continue;
+
             List<String> wordBaseForms = luceneMorph.getMorphInfo(s);
             wordBaseForms.stream().filter(word -> !word.matches(".*ЧАСТ.*|.*МЕЖД.*|.*ПРЕДЛ.*|.*СОЮЗ.*"))
                     .map(word -> word.substring(0, word.lastIndexOf('|'))).forEach(word -> {
                         if (!result.containsKey(word)) {
-                            result.put(word, 1);
-                        } else {
-                            result.put(word, result.get(word) + 1);
-                        }
+                            result.put(word,1);
+                        } else {result.put(word,result.get(word)+1);}
 
                     });
+
         }
 
         return result;

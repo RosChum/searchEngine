@@ -12,17 +12,17 @@ import searchengine.model.Site;
 @Repository
 public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
 
-//    @Query("select case when count(l)> 0 then true else false end FROM Lemma as l WHERE l.lemma = :lemma like l.site = :site")
-//    boolean existsByLemma(@Param("lemma") String lemma,@Param("site") Site site);
 
     @Transactional
-    @Query("UPDATE Lemma l set l.frequency = :frequency WHERE l.lemma = :lemma and l.site = :site")
+    @Query("UPDATE Lemma l set l.frequency = l.frequency + 1 WHERE l.lemma = :lemma")
     @Modifying(clearAutomatically = true)
-    void updateFrequency(@Param("lemma") String name, @Param("frequency") int frequency, @Param("site") Site site);
+    void updateFrequency(@Param("lemma") String name);
 
     Lemma findByLemma(String lemma);
 
     @Query("SELECT l FROM Lemma as l WHERE l.lemma = :lemma AND l.site = :site")
     Lemma findByLemmaAndSite(@Param("lemma") String lemma, @Param("site") Site site);
+
+    boolean existsLemmaByLemmaAndSite(String lemma,Site site);
 
 }
