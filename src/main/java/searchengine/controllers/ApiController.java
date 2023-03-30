@@ -28,6 +28,7 @@ public class ApiController {
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> statistics() {
+
         return ResponseEntity.ok(statisticsService.getStatistics());
     }
 

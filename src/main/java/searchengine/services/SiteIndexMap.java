@@ -5,11 +5,9 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import searchengine.config.LemmaFinder;
 import searchengine.config.LemmaСonverter;
-import searchengine.model.IndexingStatus;
-import searchengine.model.Lemma;
-import searchengine.model.Page;
-import searchengine.model.Site;
+import searchengine.model.*;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
@@ -35,8 +33,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     private IndexSearchRepository indexSearchRepository;
     private Lemma lemma;
     private LemmaСonverter lemmaСonverter = new LemmaСonverter();
-    ;
-
+    private IndexSearch indexSearch;
 
     public SiteIndexMap(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site, LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         this.url = url;
@@ -54,7 +51,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
             Thread.sleep(250);
 
             Document document = Jsoup.connect(url).userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; " +
-                            "en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").timeout(500)
+                            "en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").timeout(1000)
                     .referrer("http://www.google.com").get();
 
             Elements elements = document.select("a[href]");
@@ -71,7 +68,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                     siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
 
                     if (responseCode.statusCode() == 200)
-                        addLemmaEndIndexDB(document.text(), site);
+                        addLemmaDB(document.text(), site);
 
                     System.out.println(Thread.currentThread().getId() + " ->> " + childUrl);
 
@@ -91,6 +88,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
 
         } catch (IOException | InterruptedException exception) {
+            exception.printStackTrace();
             site.setStatus(IndexingStatus.FAILED);
             site.setLastError(exception.toString());
             site.setStatusTime(LocalDateTime.now());
@@ -119,12 +117,15 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                 !pageRepository.existsByPath(url.substring(site.getUrl().length()));
     }
 
-    private synchronized void addLemmaEndIndexDB(String text, Site site) {
+    private synchronized void addLemmaDB(String text, Site site) {
 
 //        lemmaСonverter = new LemmaСonverter();
 
         try {
             HashMap<String, Integer> lemmas = lemmaСonverter.convertTextToLemmas(text);
+
+//            HashMap<String, Integer> lemmas = new HashMap<>(LemmaFinder.getInstance().collectLemmas(text));
+
             lemmas.forEach((keyLemma, value) -> {
 
                 lemma = new Lemma();
@@ -133,17 +134,25 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                 lemma.setFrequency(1);
 
                 if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
-
                     lemmaRepository.updateFrequency(keyLemma);
-
                 } else {
                     lemmaRepository.save(lemma);
+                    addIndexDB(lemma, page, value);
                 }
+
             });
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private synchronized void addIndexDB(Lemma lemma, Page page, int value) {
+        indexSearch = new IndexSearch();
+        indexSearch.setLemma(lemma);
+        indexSearch.setPage(page);
+        indexSearch.setRank(value);
+        indexSearchRepository.save(indexSearch);
     }
 
 

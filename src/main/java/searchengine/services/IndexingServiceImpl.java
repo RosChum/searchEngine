@@ -13,10 +13,7 @@ import searchengine.repository.SiteRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Service
 public class IndexingServiceImpl implements IndexingService {
@@ -30,7 +27,6 @@ public class IndexingServiceImpl implements IndexingService {
     private LemmaRepository lemmaRepository;
     private IndexSearchRepository indexSearchRepository;
 
-    @Autowired
     public IndexingServiceImpl(SiteRepository siteRepository, PageRepository pageRepository, SitesList sitesList,
                                LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         this.siteRepository = siteRepository;
@@ -59,8 +55,8 @@ public class IndexingServiceImpl implements IndexingService {
 
             threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository,
                     pageRepository, site, lemmaRepository, indexSearchRepository));
-        });
 
+        });
 
         threadPoolExecutor.shutdown();
         threadPoolExecutor.getQueue().clear();
@@ -113,18 +109,17 @@ public class IndexingServiceImpl implements IndexingService {
 
         walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
 
-
     }
 
     private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site,
                                   LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         SiteIndexMap siteIndexMap = new SiteIndexMap(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
-        forkJoinPool = new ForkJoinPool();
+        forkJoinPool = new ForkJoinPool(10);
         Site site1 = forkJoinPool.invoke(siteIndexMap);
         if (site1.getStatus() != IndexingStatus.FAILED) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());
         }
-
+        forkJoinPool.shutdown();
     }
 
 }

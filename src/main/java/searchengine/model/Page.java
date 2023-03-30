@@ -29,18 +29,8 @@ public class Page {
     @Column(columnDefinition = "MEDIUMTEXT", nullable = false)
     private String content;
 
-    @OneToMany(mappedBy = "page")
+    @OneToMany(mappedBy = "page",cascade = CascadeType.ALL)
     private List<IndexSearch> indexSearches;
 
-    @Override
-    public String toString() {
-        return "Page{" +
-                "id=" + id +
-                ", site=" + site +
-                ", path='" + path + '\'' +
-                ", codeResponse=" + codeResponse +
-                ", content='" + content + '\'' +
-                ", indexSearches=" + indexSearches +
-                '}';
-    }
+
 }

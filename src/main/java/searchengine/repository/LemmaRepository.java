@@ -7,7 +7,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.model.Lemma;
+import searchengine.model.Page;
 import searchengine.model.Site;
+
+import java.util.List;
 
 @Repository
 public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
@@ -19,6 +22,8 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     void updateFrequency(@Param("lemma") String name);
 
     Lemma findByLemma(String lemma);
+
+    List<Lemma> findBySite(Site site);
 
     @Query("SELECT l FROM Lemma as l WHERE l.lemma = :lemma AND l.site = :site")
     Lemma findByLemmaAndSite(@Param("lemma") String lemma, @Param("site") Site site);
