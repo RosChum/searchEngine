@@ -1,19 +1,26 @@
 package searchengine.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import searchengine.config.LemmaСonverter;
 import searchengine.config.SitesList;
+import searchengine.dto.searchModel.ResultSearch;
 import searchengine.model.IndexingStatus;
+import searchengine.model.Lemma;
 import searchengine.model.Site;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Service
 public class IndexingServiceImpl implements IndexingService {
@@ -22,7 +29,8 @@ public class IndexingServiceImpl implements IndexingService {
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
     private SitesList sitesList;
-    private ForkJoinPool forkJoinPool;
+    private static ForkJoinPool forkJoinPool = new ForkJoinPool(10);
+    ;
     private ThreadPoolExecutor threadPoolExecutor;
     private LemmaRepository lemmaRepository;
     private IndexSearchRepository indexSearchRepository;
@@ -67,6 +75,7 @@ public class IndexingServiceImpl implements IndexingService {
     public void stopIndexing() {
         if (statusIndexing()) {
             threadPoolExecutor.shutdownNow();
+            forkJoinPool.shutdownNow();
             siteRepository.findAll().forEach(site -> {
                 siteRepository.updateStatus(site.getName(),
                         IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
@@ -111,10 +120,41 @@ public class IndexingServiceImpl implements IndexingService {
 
     }
 
+    @Override
+    public ResultSearch searchPage(String query, String site) {
+        ResultSearch resultSearch = new ResultSearch();
+        LemmaСonverter lemmaСonverter = new LemmaСonverter();
+        try {
+            HashMap<String, Integer> queryLemmas = lemmaСonverter.convertTextToLemmas(query);
+
+            if (site == null || site.isEmpty()) {
+                for (Map.Entry<String, Integer> lemmas : queryLemmas.entrySet()) {
+                    List<Lemma> lemmaList = lemmaRepository.findByLemmaOrderByFrequencyDesc(lemmas.getKey());
+
+                    lemmaList.forEach(lemma -> System.out.println(lemma.getFrequency() + " ----- " + lemma.getSite().getName() + "------"+lemma.getLemma()));
+
+                }
+
+
+            }
+
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        return null;
+
+    }
+
+
     private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site,
                                   LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         SiteIndexMap siteIndexMap = new SiteIndexMap(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
-        forkJoinPool = new ForkJoinPool(10);
+//        forkJoinPool = new ForkJoinPool(10);
         Site site1 = forkJoinPool.invoke(siteIndexMap);
         if (site1.getStatus() != IndexingStatus.FAILED) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());

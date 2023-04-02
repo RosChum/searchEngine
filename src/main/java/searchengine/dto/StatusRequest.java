@@ -1,9 +1,9 @@
-package searchengine.dto.statistics.Indexing;
+package searchengine.dto;
 
 import lombok.Data;
 
 @Data
-public class Indexing {
+public class StatusRequest {
     private boolean result;
     private String error;
 

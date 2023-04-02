@@ -17,11 +17,13 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
 
 
     @Transactional
-    @Query("UPDATE Lemma l set l.frequency = l.frequency + 1 WHERE l.lemma = :lemma")
+    @Query("UPDATE Lemma l set l.frequency = l.frequency + 1 WHERE l.lemma = :lemma AND l.site = :site")
     @Modifying(clearAutomatically = true)
-    void updateFrequency(@Param("lemma") String name);
+    void updateFrequency(@Param("lemma") String name, @Param("site") Site site);
 
-    Lemma findByLemma(String lemma);
+    List <Lemma> findByLemmaOrderByFrequencyDesc(String text);
+
+    boolean existsLemmaByLemma(String text);
 
     List<Lemma> findBySite(Site site);
 

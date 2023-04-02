@@ -134,7 +134,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                 lemma.setFrequency(1);
 
                 if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
-                    lemmaRepository.updateFrequency(keyLemma);
+                    lemmaRepository.updateFrequency(keyLemma, site);
                 } else {
                     lemmaRepository.save(lemma);
                     addIndexDB(lemma, page, value);

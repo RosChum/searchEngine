@@ -5,12 +5,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.config.SitesList;
-import searchengine.dto.statistics.Indexing.Indexing;
+import searchengine.dto.StatusRequest;
 import searchengine.dto.statistics.StatisticsResponse;
+import searchengine.model.Site;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
-
-import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api")
@@ -33,54 +32,71 @@ public class ApiController {
     }
 
     @GetMapping(value = "/startIndexing", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Indexing> startIndexing() {
-        Indexing indexing = new Indexing();
+    public ResponseEntity<StatusRequest> startIndexing() {
+        StatusRequest statusRequest = new StatusRequest();
         if (indexingService.statusIndexing()) {
-            indexing.setResult(false);
-            indexing.setError("Индексация уже запущена");
-            return ResponseEntity.ok(indexing);
+            statusRequest.setResult(false);
+            statusRequest.setError("Индексация уже запущена");
+            return ResponseEntity.ok(statusRequest);
         } else {
             indexingService.startIndexing();
-            indexing.setResult(true);
-            return ResponseEntity.ok(indexing);
+            statusRequest.setResult(true);
+            return ResponseEntity.ok(statusRequest);
         }
 
     }
 
     @GetMapping(value = "/stopIndexing", produces = MediaType.APPLICATION_JSON_VALUE)
-    public Indexing stopIndexing() {
-        Indexing indexing = new Indexing();
+    public StatusRequest stopIndexing() {
+        StatusRequest statusRequest = new StatusRequest();
         if (indexingService.statusIndexing()) {
-            indexing.setResult(true);
+            statusRequest.setResult(true);
             indexingService.stopIndexing();
-            return indexing;
+            return statusRequest;
         } else {
-            indexing.setResult(false);
-            indexing.setError("Индексация не запущена");
-            return indexing;
+            statusRequest.setResult(false);
+            statusRequest.setError("Индексация не запущена");
+            return statusRequest;
         }
     }
 
     @PostMapping(value = "/indexPage", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Indexing> indexPage(@RequestParam String url) {
-        String urlAddress  = url.replace("www.", "");
-        Indexing indexing = new Indexing();
+    public ResponseEntity<StatusRequest> indexPage(@RequestParam String url) {
+        String urlAddress = url.replace("www.", "");
+        StatusRequest statusRequest = new StatusRequest();
         if (indexingService.getListSiteIndexing().stream().anyMatch(s -> s.getUrl().contains(urlAddress))) {
-            indexing.setResult(true);
+            statusRequest.setResult(true);
             indexingService.indexPage(urlAddress);
-            return ResponseEntity.ok(indexing);
+            return ResponseEntity.ok(statusRequest);
         } else {
-            indexing.setResult(false);
-            indexing.setError("Данная страница находится за пределами сайтов, " +
+            statusRequest.setResult(false);
+            statusRequest.setError("Данная страница находится за пределами сайтов, " +
                     "указанных в конфигурационном файле");
 
-            return ResponseEntity.ok(indexing);
+            return ResponseEntity.ok(statusRequest);
         }
 
 
+    }
+
+    @GetMapping(value = "/search")
+    public ResponseEntity<?> search(@RequestParam(name = "query") String query, @RequestParam(required = false, name = ("site")) String site) {
+        StatusRequest statusRequest = new StatusRequest();
+
+        if (query.isEmpty()) {
+            statusRequest.setResult(false);
+            statusRequest.setError("Задан пустой поисковый запрос");
+            return ResponseEntity.ok(statusRequest);
+        }
+
+        if (indexingService.searchPage(query, site) == null) {
+            statusRequest.setResult(false);
+            statusRequest.setError("Указанная страница не найдена");
+            return ResponseEntity.status(404).body(statusRequest);
+        }
 
 
-
+        return ResponseEntity.ok(indexingService.searchPage(query, site));
     }
 
 }
