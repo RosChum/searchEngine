@@ -29,16 +29,17 @@ indexing-settings:
   sites:
     - url: https://www.lenta.ru
       name: Лента.ру
-    - url: https://www.skillbox.ru
-      name: Skillbox
+#    - url: https://www.skillbox.ru
+#      name: Skillbox
     - url: https://www.playback.ru
       name: PlayBack.Ru
-
-    - url: https://www.nikoartgallery.com
-      name: nikoartgallery.com
-
+#    - url: http://radiomv.ru
+#      name: radiomv
+#    - url: https://www.lutherancathedral.ru
+#      name: lutherancathedral
 #    - url: https://ipfran.ru
 #      name: ipfran.ru
-#
-#    - url: https://dombulgakova.ru
-#      name: dombulgakova
+    - url: https://dombulgakova.ru
+      name: dombulgakova
+    - url: https://www.nikoartgallery.com
+      name: nikoartgallery.com

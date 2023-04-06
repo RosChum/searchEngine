@@ -21,7 +21,7 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     @Modifying(clearAutomatically = true)
     void updateFrequency(@Param("lemma") String name, @Param("site") Site site);
 
-    List <Lemma> findByLemmaOrderByFrequencyDesc(String text);
+    List <Lemma> findByLemmaOrderByFrequencyAsc(String text);
 
     boolean existsLemmaByLemma(String text);
 

@@ -18,9 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 
 @Service
 public class IndexingServiceImpl implements IndexingService {
@@ -29,11 +27,11 @@ public class IndexingServiceImpl implements IndexingService {
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
     private SitesList sitesList;
-    private static ForkJoinPool forkJoinPool = new ForkJoinPool(10);
-    ;
+    private ForkJoinPool forkJoinPool;
     private ThreadPoolExecutor threadPoolExecutor;
     private LemmaRepository lemmaRepository;
     private IndexSearchRepository indexSearchRepository;
+
 
     public IndexingServiceImpl(SiteRepository siteRepository, PageRepository pageRepository, SitesList sitesList,
                                LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
@@ -75,11 +73,15 @@ public class IndexingServiceImpl implements IndexingService {
     public void stopIndexing() {
         if (statusIndexing()) {
             threadPoolExecutor.shutdownNow();
-            forkJoinPool.shutdownNow();
-            siteRepository.findAll().forEach(site -> {
-                siteRepository.updateStatus(site.getName(),
-                        IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
-            });
+            SiteIndexMap.stop = true;
+
+//            siteRepository.findAll().forEach(site -> {
+//                siteRepository.updateStatus(site.getName(),
+//                        IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
+//
+//            });
+
+
         }
 
     }
@@ -123,22 +125,22 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public ResultSearch searchPage(String query, String site) {
         ResultSearch resultSearch = new ResultSearch();
+
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
         try {
             HashMap<String, Integer> queryLemmas = lemmaСonverter.convertTextToLemmas(query);
 
             if (site == null || site.isEmpty()) {
                 for (Map.Entry<String, Integer> lemmas : queryLemmas.entrySet()) {
-                    List<Lemma> lemmaList = lemmaRepository.findByLemmaOrderByFrequencyDesc(lemmas.getKey());
+                    List<Lemma> lemmaList = lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas.getKey());
 
-                    lemmaList.forEach(lemma -> System.out.println(lemma.getFrequency() + " ----- " + lemma.getSite().getName() + "------"+lemma.getLemma()));
+
+                    lemmaList.forEach(lemma -> System.out.println(lemma.getFrequency() + " ----- " + lemma.getSite().getName() + "------" + lemma.getLemma()));
 
                 }
 
 
             }
-
-
 
 
         } catch (IOException e) {
@@ -153,8 +155,9 @@ public class IndexingServiceImpl implements IndexingService {
 
     private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site,
                                   LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
+        SiteIndexMap.stop = false;
         SiteIndexMap siteIndexMap = new SiteIndexMap(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
-//        forkJoinPool = new ForkJoinPool(10);
+        forkJoinPool = new ForkJoinPool(10);
         Site site1 = forkJoinPool.invoke(siteIndexMap);
         if (site1.getStatus() != IndexingStatus.FAILED) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());

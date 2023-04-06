@@ -5,8 +5,8 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import searchengine.config.LemmaFinder;
 import searchengine.config.LemmaСonverter;
+import searchengine.config.UserStopIndexingException;
 import searchengine.model.*;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.RecursiveTask;
 
 public class SiteIndexMap extends RecursiveTask<Site> {
@@ -34,6 +35,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     private Lemma lemma;
     private LemmaСonverter lemmaСonverter = new LemmaСonverter();
     private IndexSearch indexSearch;
+    public static boolean stop;
 
     public SiteIndexMap(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site, LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         this.url = url;
@@ -47,56 +49,70 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     @Override
     protected Site compute() {
 
-        try {
-            Thread.sleep(250);
+            try {
 
-            Document document = Jsoup.connect(url).userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; " +
-                            "en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").timeout(1000)
-                    .referrer("http://www.google.com").get();
+                Thread.sleep(250);
 
-            Elements elements = document.select("a[href]");
+                Document document = Jsoup.connect(url).get();
 
-            elements.forEach(element -> {
-                childUrl = element.absUrl("href");
+                Elements elements = document.select("a[href]");
 
-                if (checkURL(childUrl, site)) {
+                elements.forEach(element -> {
+                    childUrl = element.absUrl("href");
 
-                    Connection.Response responseCode = document.connection().response();
+                    if (checkURL(childUrl, site)) {
 
-                    addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
+                        Connection.Response responseCode = document.connection().response();
 
-                    siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
+                        addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
+
+                        siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
 
                     if (responseCode.statusCode() == 200)
                         addLemmaDB(document.text(), site);
 
-                    System.out.println(Thread.currentThread().getId() + " ->> " + childUrl);
+                        SiteIndexMap siteIndexMap = new SiteIndexMap(childUrl, siteRepository, pageRepository, site,
+                                lemmaRepository, indexSearchRepository);
 
-                    SiteIndexMap siteIndexMap = new SiteIndexMap(childUrl, siteRepository, pageRepository, site,
-                            lemmaRepository, indexSearchRepository);
+                        task.add(siteIndexMap);
 
-                    task.add(siteIndexMap);
+                    }
 
-                }
-
-            });
+                });
 
 
-        } catch (HttpStatusException ex) {
-            ex.printStackTrace();
-            addPageInDb(url, ex.getStatusCode(), ex.toString(), site);
+            } catch (HttpStatusException ex) {
+                ex.printStackTrace();
+                addPageInDb(url, ex.getStatusCode(), ex.toString(), site);
 
+            } catch (IOException | InterruptedException exception) {
+                exception.printStackTrace();
+                site.setStatus(IndexingStatus.FAILED);
+                site.setLastError(exception.toString());
+                site.setStatusTime(LocalDateTime.now());
+                siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, exception.toString(), LocalDateTime.now());
+                return site;
 
-        } catch (IOException | InterruptedException exception) {
-            exception.printStackTrace();
-            site.setStatus(IndexingStatus.FAILED);
-            site.setLastError(exception.toString());
-            site.setStatusTime(LocalDateTime.now());
-            siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, exception.toString(), LocalDateTime.now());
-            return site;
+            }
+
+            invokeAll(task);
+
+        if (stop) {
+
+            ForkJoinWorkerThread.currentThread().interrupt();
+
+            try {
+                throw new UserStopIndexingException();
+            } catch (UserStopIndexingException e) {
+
+                siteRepository.findAll().forEach(site -> {
+                    siteRepository.updateStatus(site.getName(),
+                            IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
+
+                });
+            }
         }
 
-        invokeAll(task);
         return site;
     }
 
@@ -145,6 +161,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
     }
 
     private synchronized void addIndexDB(Lemma lemma, Page page, int value) {
@@ -154,7 +171,6 @@ public class SiteIndexMap extends RecursiveTask<Site> {
         indexSearch.setRank(value);
         indexSearchRepository.save(indexSearch);
     }
-
 
 }
 
