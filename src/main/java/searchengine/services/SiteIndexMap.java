@@ -6,7 +6,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import searchengine.config.LemmaСonverter;
-import searchengine.config.UserStopIndexingException;
 import searchengine.model.*;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
@@ -36,6 +35,8 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     private LemmaСonverter lemmaСonverter = new LemmaСonverter();
     private IndexSearch indexSearch;
     public static boolean stop;
+    private HashMap<String, Integer> lemmas;
+
 
     public SiteIndexMap(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site, LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         this.url = url;
@@ -49,68 +50,59 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     @Override
     protected Site compute() {
 
-            try {
+        try {
 
-                Thread.sleep(250);
+            Thread.sleep(250);
 
-                Document document = Jsoup.connect(url).get();
+            Document document = Jsoup.connect(url).get();
 
-                Elements elements = document.select("a[href]");
+            Elements elements = document.select("a[href]");
 
-                elements.forEach(element -> {
-                    childUrl = element.absUrl("href");
+            elements.forEach(element -> {
+                childUrl = element.absUrl("href");
 
-                    if (checkURL(childUrl, site)) {
+                if (checkURL(childUrl, site)) {
 
-                        Connection.Response responseCode = document.connection().response();
+                    Connection.Response responseCode = document.connection().response();
 
-                        addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
+                    addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
 
-                        siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
+                    siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
 
                     if (responseCode.statusCode() == 200)
                         addLemmaDB(document.text(), site);
 
-                        SiteIndexMap siteIndexMap = new SiteIndexMap(childUrl, siteRepository, pageRepository, site,
-                                lemmaRepository, indexSearchRepository);
+                    SiteIndexMap siteIndexMap = new SiteIndexMap(childUrl, siteRepository, pageRepository, site,
+                            lemmaRepository, indexSearchRepository);
 
+                    if (stop) {
+                        task.clear();
+                        ForkJoinWorkerThread.currentThread().interrupt();
+                    } else {
+                        siteIndexMap.fork();
                         task.add(siteIndexMap);
-
                     }
+                }
 
-                });
+            });
 
 
-            } catch (HttpStatusException ex) {
-                ex.printStackTrace();
-                addPageInDb(url, ex.getStatusCode(), ex.toString(), site);
+        } catch (HttpStatusException ex) {
+            ex.printStackTrace();
+            addPageInDb(url, ex.getStatusCode(), ex.toString(), site);
 
-            } catch (IOException | InterruptedException exception) {
-                exception.printStackTrace();
-                site.setStatus(IndexingStatus.FAILED);
-                site.setLastError(exception.toString());
-                site.setStatusTime(LocalDateTime.now());
-                siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, exception.toString(), LocalDateTime.now());
-                return site;
+        } catch (IOException | InterruptedException exception) {
+            exception.printStackTrace();
+            site.setStatus(IndexingStatus.FAILED);
+            site.setLastError(exception.toString());
+            site.setStatusTime(LocalDateTime.now());
+            siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, exception.toString(), LocalDateTime.now());
+            return site;
 
-            }
+        }
 
-            invokeAll(task);
-
-        if (stop) {
-
-            ForkJoinWorkerThread.currentThread().interrupt();
-
-            try {
-                throw new UserStopIndexingException();
-            } catch (UserStopIndexingException e) {
-
-                siteRepository.findAll().forEach(site -> {
-                    siteRepository.updateStatus(site.getName(),
-                            IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
-
-                });
-            }
+        for (SiteIndexMap site1 : task) {
+            site1.join();
         }
 
         return site;
@@ -135,31 +127,31 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
     private synchronized void addLemmaDB(String text, Site site) {
 
-//        lemmaСonverter = new LemmaСonverter();
+        if (!stop) {
+            try {
+                lemmas = lemmaСonverter.convertTextToLemmas(text);
+                lemmas.forEach((keyLemma, value) -> {
+                    lemma = new Lemma();
+                    lemma.setLemma(keyLemma);
+                    lemma.setSite(site);
+                    lemma.setFrequency(1);
 
-        try {
-            HashMap<String, Integer> lemmas = lemmaСonverter.convertTextToLemmas(text);
+                    if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
+                        lemmaRepository.updateFrequency(keyLemma, site);
 
-//            HashMap<String, Integer> lemmas = new HashMap<>(LemmaFinder.getInstance().collectLemmas(text));
+                    } else {
+                        lemmaRepository.save(lemma);
+                        addIndexDB(lemma, page, value);
+                    }
 
-            lemmas.forEach((keyLemma, value) -> {
+                });
 
-                lemma = new Lemma();
-                lemma.setLemma(keyLemma);
-                lemma.setSite(site);
-                lemma.setFrequency(1);
-
-                if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
-                    lemmaRepository.updateFrequency(keyLemma, site);
-                } else {
-                    lemmaRepository.save(lemma);
-                    addIndexDB(lemma, page, value);
-                }
-
-            });
-
-        } catch (IOException e) {
-            e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            lemmas.clear();
+            ForkJoinWorkerThread.currentThread().interrupt();
         }
 
     }

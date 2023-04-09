@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import searchengine.config.SitesList;
 import searchengine.dto.StatusRequest;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.model.Site;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
 

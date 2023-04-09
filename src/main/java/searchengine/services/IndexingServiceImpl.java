@@ -74,13 +74,7 @@ public class IndexingServiceImpl implements IndexingService {
         if (statusIndexing()) {
             threadPoolExecutor.shutdownNow();
             SiteIndexMap.stop = true;
-
-//            siteRepository.findAll().forEach(site -> {
-//                siteRepository.updateStatus(site.getName(),
-//                        IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
-//
-//            });
-
+            ForkJoinPool.commonPool().shutdownNow();
 
         }
 
@@ -134,7 +128,6 @@ public class IndexingServiceImpl implements IndexingService {
                 for (Map.Entry<String, Integer> lemmas : queryLemmas.entrySet()) {
                     List<Lemma> lemmaList = lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas.getKey());
 
-
                     lemmaList.forEach(lemma -> System.out.println(lemma.getFrequency() + " ----- " + lemma.getSite().getName() + "------" + lemma.getLemma()));
 
                 }
@@ -162,6 +155,9 @@ public class IndexingServiceImpl implements IndexingService {
         if (site1.getStatus() != IndexingStatus.FAILED) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());
         }
+        if (site1.getStatus() != IndexingStatus.FAILED && site1.getStatus() != IndexingStatus.INDEXED && SiteIndexMap.stop)
+        {siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now()); }
+
         forkJoinPool.shutdown();
     }
 
