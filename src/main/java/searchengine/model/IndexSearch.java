@@ -19,8 +19,8 @@ public class IndexSearch {
     @JoinColumn(name = "page_id", referencedColumnName = "id", nullable = false)
     private Page page;
 
-    @OneToOne
-//    @JoinColumn(name = "lemma_id", referencedColumnName = "id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "lemma_id", referencedColumnName = "id", nullable = false)
     private Lemma lemma;
 
     @Column(name = "`rank`", columnDefinition = "FLOAT", nullable = false)

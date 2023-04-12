@@ -22,12 +22,14 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
 
     List <Lemma> findByLemmaOrderByFrequencyAsc(String text);
 
-    boolean existsLemmaByLemma(String text);
+    boolean existsByLemma(Lemma lemma);
 
     List<Lemma> findBySite(Site site);
 
+    Lemma findByLemmaAndSite(String lemma, Site site);
+
     @Query("SELECT l FROM Lemma as l WHERE l.lemma = :lemma AND l.site = :site")
-    Lemma findByLemmaAndSite(@Param("lemma") String lemma, @Param("site") Site site);
+    List<Lemma> findByLemmaAndSite(@Param("lemma") String lemma, @Param("site") String site);
 
     boolean existsLemmaByLemmaAndSite(String lemma,Site site);
 

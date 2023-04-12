@@ -16,7 +16,7 @@ spring:
 #          batch_size: 4000
       dialect: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
 
 #logging:
@@ -27,19 +27,25 @@ spring:
 
 indexing-settings:
   sites:
-    - url: https://www.lenta.ru
-      name: Лента.ру
+#    - url: https://www.lenta.ru
+#      name: Лента.ру
 #    - url: https://www.skillbox.ru
 #      name: Skillbox
     - url: https://www.playback.ru
       name: PlayBack.Ru
 #    - url: http://radiomv.ru
 #      name: radiomv
-#    - url: https://www.lutherancathedral.ru
-#      name: lutherancathedral
+    - url: https://www.lutherancathedral.ru
+      name: lutherancathedral
 #    - url: https://ipfran.ru
 #      name: ipfran.ru
     - url: https://dombulgakova.ru
       name: dombulgakova
-    - url: https://www.nikoartgallery.com
-      name: nikoartgallery.com
+#    - url: https://www.nikoartgallery.com
+#      name: nikoartgallery.com
+    - url: https://volochek.life
+      name: volochek
+    - url: https://dimonvideo.ru
+      name: dimonvideo
+    - url: https://et-cetera.ru/mobile
+      name: ceteram

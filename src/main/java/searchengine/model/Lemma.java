@@ -25,8 +25,8 @@ public class Lemma {
     @Column(nullable = false)
     private Integer frequency;
 
-    @OneToOne(mappedBy = "lemma", cascade = CascadeType.ALL)
-    private IndexSearch indexSearches;
+    @OneToMany(mappedBy = "lemma", cascade = CascadeType.ALL)
+    private List <IndexSearch> indexSearches;
 
 
 }

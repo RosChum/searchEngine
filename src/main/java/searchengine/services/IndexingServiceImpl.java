@@ -4,9 +4,7 @@ import org.springframework.stereotype.Service;
 import searchengine.config.LemmaСonverter;
 import searchengine.config.SitesList;
 import searchengine.dto.searchModel.ResultSearch;
-import searchengine.model.IndexingStatus;
-import searchengine.model.Lemma;
-import searchengine.model.Site;
+import searchengine.model.*;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
@@ -14,11 +12,9 @@ import searchengine.repository.SiteRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 @Service
 public class IndexingServiceImpl implements IndexingService {
@@ -31,6 +27,7 @@ public class IndexingServiceImpl implements IndexingService {
     private ThreadPoolExecutor threadPoolExecutor;
     private LemmaRepository lemmaRepository;
     private IndexSearchRepository indexSearchRepository;
+    private ResultSearch resultSearch;
 
 
     public IndexingServiceImpl(SiteRepository siteRepository, PageRepository pageRepository, SitesList sitesList,
@@ -119,22 +116,36 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public ResultSearch searchPage(String query, String site) {
         ResultSearch resultSearch = new ResultSearch();
+        List<Lemma> lemmaList = new ArrayList<>();
 
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
+
         try {
             HashMap<String, Integer> queryLemmas = lemmaСonverter.convertTextToLemmas(query);
 
-            if (site == null || site.isEmpty()) {
-                for (Map.Entry<String, Integer> lemmas : queryLemmas.entrySet()) {
-                    List<Lemma> lemmaList = lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas.getKey());
+            for (Map.Entry<String, Integer> lemmas : queryLemmas.entrySet()) {
 
-                    lemmaList.forEach(lemma -> System.out.println(lemma.getFrequency() + " ----- " + lemma.getSite().getName() + "------" + lemma.getLemma()));
+                if (site == null || site.isEmpty()) {
 
+                    lemmaList.addAll(lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas.getKey()));
+                } else {
+
+                    lemmaList.addAll(lemmaRepository.findByLemmaAndSite(lemmas.getKey(), site));
                 }
 
 
             }
 
+            int countPage = pageRepository.findAll().size();
+            List<Lemma> sortedLemmas = lemmaList.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
+                    .sorted(Comparator.comparing(Lemma::getFrequency)).toList();
+
+            List<IndexSearch> indexSearchList = indexSearchRepository.findByLemma(sortedLemmas.get(3));
+
+            searchMatches(sortedLemmas, indexSearchList);
+
+            sortedLemmas.forEach(lemma -> System.out.println(lemma.getFrequency() + " ----- " + lemma.getSite().getName() + "------" + lemma.getLemma()));
+            indexSearchList.forEach(indexSearch -> System.out.println(indexSearch.getLemma().getLemma() + " ----- " + indexSearch.getLemma().getFrequency() ));
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -155,10 +166,28 @@ public class IndexingServiceImpl implements IndexingService {
         if (site1.getStatus() != IndexingStatus.FAILED) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());
         }
-        if (site1.getStatus() != IndexingStatus.FAILED && site1.getStatus() != IndexingStatus.INDEXED && SiteIndexMap.stop)
-        {siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now()); }
-
+        if (site1.getStatus() != IndexingStatus.FAILED && site1.getStatus() != IndexingStatus.INDEXED && SiteIndexMap.stop) {
+            siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
+        }
         forkJoinPool.shutdown();
     }
+
+    private ResultSearch searchMatches(List<Lemma> lemmaList, List<IndexSearch> indexSearchList) {
+
+
+        for (int i = 1; i < lemmaList.size(); i++) {
+
+            indexSearchList.forEach(indexSearch -> {
+
+
+            });
+
+        }
+
+
+        return resultSearch;
+
+    }
+
 
 }

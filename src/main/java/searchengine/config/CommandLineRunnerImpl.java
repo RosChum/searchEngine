@@ -23,17 +23,17 @@ public class CommandLineRunnerImpl implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        sitesList.getSites().forEach(siteFromAppProperties -> {
-            siteFromAppProperties.setUrl(siteFromAppProperties.getUrl().replace("www.", ""));
-            searchengine.model.Site site = new Site();
-            site.setName(siteFromAppProperties.getName());
-            site.setUrl(siteFromAppProperties.getUrl());
-            site.setStatus(IndexingStatus.INDEXING);
-            site.setStatusTime(LocalDateTime.now());
-            site.setLastError(null);
-            siteRepository.save(site);
+//        sitesList.getSites().forEach(siteFromAppProperties -> {
+//            siteFromAppProperties.setUrl(siteFromAppProperties.getUrl().replace("www.", ""));
+//            searchengine.model.Site site = new Site();
+//            site.setName(siteFromAppProperties.getName());
+//            site.setUrl(siteFromAppProperties.getUrl());
+//            site.setStatus(IndexingStatus.INDEXING);
+//            site.setStatusTime(LocalDateTime.now());
+//            site.setLastError(null);
+//            siteRepository.save(site);
 
-        });
+//        });
 
     }
 }

@@ -38,7 +38,8 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     private HashMap<String, Integer> lemmas;
 
 
-    public SiteIndexMap(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site, LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
+    public SiteIndexMap(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site,
+                        LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
         this.url = url;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
@@ -67,10 +68,11 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
 
-                    siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
+                    siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now()); // fix
 
-                    if (responseCode.statusCode() == 200)
+                    if (responseCode.statusCode() == 200) {
                         addLemmaDB(document.text(), site);
+                    }
 
                     SiteIndexMap siteIndexMap = new SiteIndexMap(childUrl, siteRepository, pageRepository, site,
                             lemmaRepository, indexSearchRepository);
@@ -136,8 +138,10 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                     lemma.setSite(site);
                     lemma.setFrequency(1);
 
-                    if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
+                    if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma,site)) {
                         lemmaRepository.updateFrequency(keyLemma, site);
+                        lemma = lemmaRepository.findByLemmaAndSite(keyLemma,site);
+                        addIndexDB(lemma, page, value);
 
                     } else {
                         lemmaRepository.save(lemma);
