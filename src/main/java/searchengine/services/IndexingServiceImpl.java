@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 @Service
 public class IndexingServiceImpl implements IndexingService {
@@ -116,36 +115,36 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public ResultSearch searchPage(String query, String site) {
         ResultSearch resultSearch = new ResultSearch();
-        List<Lemma> lemmaList = new ArrayList<>();
+        List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
 
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
 
         try {
-            HashMap<String, Integer> queryLemmas = lemmaСonverter.convertTextToLemmas(query);
+            Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
 
-            for (Map.Entry<String, Integer> lemmas : queryLemmas.entrySet()) {
+            for (String lemmas : queryLemmas) {
 
                 if (site == null || site.isEmpty()) {
 
-                    lemmaList.addAll(lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas.getKey()));
+                    foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas));
+
                 } else {
 
-                    lemmaList.addAll(lemmaRepository.findByLemmaAndSite(lemmas.getKey(), site));
+                    foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaAndSite(lemmas, site));
                 }
 
-
             }
+            foundLemmaListFromQuery.forEach(s -> System.out.println(s.getLemma()));
 
             int countPage = pageRepository.findAll().size();
-            List<Lemma> sortedLemmas = lemmaList.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
+            List<Lemma> sortedFoundLemmaListFromQuery = foundLemmaListFromQuery.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
                     .sorted(Comparator.comparing(Lemma::getFrequency)).toList();
 
-            List<IndexSearch> indexSearchList = indexSearchRepository.findByLemma(sortedLemmas.get(3));
+            List<IndexSearch> foundListIndexSearchByFirstLemma = sortedFoundLemmaListFromQuery.size() > 0
+                    ? indexSearchRepository.findAllByLemma(sortedFoundLemmaListFromQuery.get(0)) : null;
 
-            searchMatches(sortedLemmas, indexSearchList);
+            searchMatches(sortedFoundLemmaListFromQuery, foundListIndexSearchByFirstLemma, sortedFoundLemmaListFromQuery.size());
 
-            sortedLemmas.forEach(lemma -> System.out.println(lemma.getFrequency() + " ----- " + lemma.getSite().getName() + "------" + lemma.getLemma()));
-            indexSearchList.forEach(indexSearch -> System.out.println(indexSearch.getLemma().getLemma() + " ----- " + indexSearch.getLemma().getFrequency() ));
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -172,20 +171,12 @@ public class IndexingServiceImpl implements IndexingService {
         forkJoinPool.shutdown();
     }
 
-    private ResultSearch searchMatches(List<Lemma> lemmaList, List<IndexSearch> indexSearchList) {
+    private List<Page> searchMatches(List<Lemma> sortedFoundLemmaListFromQuery, List<IndexSearch> foundListIndexSearchByFirstLemma, int countIteration) {
+
+        List<Page> pagesMatchesLemmas = new ArrayList<>();
 
 
-        for (int i = 1; i < lemmaList.size(); i++) {
-
-            indexSearchList.forEach(indexSearch -> {
-
-
-            });
-
-        }
-
-
-        return resultSearch;
+        return pagesMatchesLemmas;
 
     }
 

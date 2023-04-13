@@ -10,5 +10,5 @@ import java.util.List;
 @Repository
 public interface IndexSearchRepository extends JpaRepository<IndexSearch, Integer> {
 
-    List<IndexSearch> findByLemma(Lemma lemma);
+    List<IndexSearch> findAllByLemma(Lemma lemma);
 }

@@ -20,7 +20,7 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     @Modifying(clearAutomatically = true)
     void updateFrequency(@Param("lemma") String name, @Param("site") Site site);
 
-    List <Lemma> findByLemmaOrderByFrequencyAsc(String text);
+    List<Lemma> findByLemmaOrderByFrequencyAsc(String text);
 
     boolean existsByLemma(Lemma lemma);
 
@@ -31,6 +31,6 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     @Query("SELECT l FROM Lemma as l WHERE l.lemma = :lemma AND l.site = :site")
     List<Lemma> findByLemmaAndSite(@Param("lemma") String lemma, @Param("site") String site);
 
-    boolean existsLemmaByLemmaAndSite(String lemma,Site site);
+    boolean existsLemmaByLemmaAndSite(String lemma, Site site);
 
 }
