@@ -1,11 +1,10 @@
-package searchengine.services;
+package searchengine.utility;
 
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import searchengine.config.LemmaСonverter;
 import searchengine.model.*;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;

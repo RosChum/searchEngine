@@ -1,7 +1,7 @@
 package searchengine.services;
 
 import org.springframework.stereotype.Service;
-import searchengine.config.LemmaСonverter;
+import searchengine.utility.LemmaСonverter;
 import searchengine.config.SitesList;
 import searchengine.dto.searchModel.ResultSearch;
 import searchengine.model.*;
@@ -9,6 +9,7 @@ import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
+import searchengine.utility.SiteIndexMap;
 
 import java.io.IOException;
 import java.time.LocalDateTime;

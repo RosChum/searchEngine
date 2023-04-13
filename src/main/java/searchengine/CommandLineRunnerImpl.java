@@ -1,13 +1,10 @@
-package searchengine.config;
+package searchengine;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
-import searchengine.model.IndexingStatus;
-import searchengine.model.Site;
+import searchengine.config.SitesList;
 import searchengine.repository.SiteRepository;
-
-import java.time.LocalDateTime;
 
 @Configuration
 public class CommandLineRunnerImpl implements CommandLineRunner {
