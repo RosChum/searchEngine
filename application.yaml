@@ -6,6 +6,9 @@ spring:
     username: root
     password: 123456789
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+#  output:
+#    ansi:
+#      enabled: ALWAYS
 
   jpa:
     properties:
@@ -21,9 +24,9 @@ spring:
 
 #logging:
 #  level:
-#    root: trace
-
-
+#    root: info
+#  file:
+#    name: log.txt
 
 indexing-settings:
   sites:
@@ -35,16 +38,16 @@ indexing-settings:
       name: PlayBack.Ru
 #    - url: http://radiomv.ru
 #      name: radiomv
-    - url: https://www.lutherancathedral.ru
-      name: lutherancathedral
+#    - url: https://www.lutherancathedral.ru
+#      name: lutherancathedral
 #    - url: https://ipfran.ru
 #      name: ipfran.ru
     - url: https://dombulgakova.ru
       name: dombulgakova
 #    - url: https://www.nikoartgallery.com
 #      name: nikoartgallery.com
-    - url: https://volochek.life
-      name: volochek
+#    - url: https://volochek.life
+#      name: volochek
     - url: https://dimonvideo.ru
       name: dimonvideo
     - url: https://et-cetera.ru/mobile

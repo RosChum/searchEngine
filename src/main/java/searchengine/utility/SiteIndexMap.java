@@ -67,7 +67,8 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
 
-                    siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now()); // fix
+                    //TODO fix
+//                    siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
 
                     if (responseCode.statusCode() == 200) {
                         addLemmaDB(document.text(), site);

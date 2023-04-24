@@ -1,7 +1,6 @@
 package searchengine.services;
 
 import org.springframework.stereotype.Service;
-import searchengine.utility.LemmaСonverter;
 import searchengine.config.SitesList;
 import searchengine.dto.searchModel.ResultSearch;
 import searchengine.model.*;
@@ -9,12 +8,16 @@ import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
+import searchengine.utility.LemmaСonverter;
 import searchengine.utility.SiteIndexMap;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.stream.Collectors;
 
 @Service
 public class IndexingServiceImpl implements IndexingService {
@@ -117,40 +120,49 @@ public class IndexingServiceImpl implements IndexingService {
     public ResultSearch searchPage(String query, String site) {
         ResultSearch resultSearch = new ResultSearch();
         List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
-
+        List<IndexSearch> foundListIndexSearchByFirstLemma;
+        Set<IndexSearch> foundAllIndexFromQuery = new HashSet<>();
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
-
         try {
             Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
-
             for (String lemmas : queryLemmas) {
-
                 if (site == null || site.isEmpty()) {
-
                     foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas));
-
                 } else {
-
                     foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaAndSite(lemmas, site));
                 }
-
             }
-            foundLemmaListFromQuery.forEach(s -> System.out.println(s.getLemma()));
 
             int countPage = pageRepository.findAll().size();
             List<Lemma> sortedFoundLemmaListFromQuery = foundLemmaListFromQuery.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
                     .sorted(Comparator.comparing(Lemma::getFrequency)).toList();
 
-            List<IndexSearch> foundListIndexSearchByFirstLemma = sortedFoundLemmaListFromQuery.size() > 0
-                    ? indexSearchRepository.findAllByLemma(sortedFoundLemmaListFromQuery.get(0)) : null;
+            if (sortedFoundLemmaListFromQuery.size() > 0) {
+                foundListIndexSearchByFirstLemma = sortedFoundLemmaListFromQuery.stream().flatMap(s -> s.getIndexSearches().stream()
+                        .filter(f -> f.getLemma().getLemma().equals(sortedFoundLemmaListFromQuery.get(0).getLemma()))
+                        .flatMap(f -> f.getPage().getIndexSearches().stream())).collect(Collectors.toList()); //находим все страницы по первой лемме, получаем страницы, получаем леммы страниц
 
-            searchMatches(sortedFoundLemmaListFromQuery, foundListIndexSearchByFirstLemma, sortedFoundLemmaListFromQuery.size());
+                for (int i = 0; i < sortedFoundLemmaListFromQuery.size(); i++) {
+                    int finalI = i;
+                    foundAllIndexFromQuery = foundListIndexSearchByFirstLemma.stream()
+                            .filter(f -> f.getLemma().equals(sortedFoundLemmaListFromQuery.get(finalI))).collect(Collectors.toSet()); //кривой поиск страниц
+
+                }
+
+
+            } else {
+                return resultSearch;
+            }
+
+
+            sortedFoundLemmaListFromQuery.forEach(f -> System.out.println(f.getId() + "   " + f.getLemma() + "    " + f.getFrequency()));
+
+            foundAllIndexFromQuery.forEach(f -> System.out.println(f.getPage().getSite().getUrl() + f.getPage().getPath()));
 
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
 
         return null;
 
