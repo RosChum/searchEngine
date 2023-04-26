@@ -31,7 +31,7 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     Lemma findByLemmaAndSite(String lemma, Site site);
 
     @Query("SELECT l FROM Lemma as l WHERE l.lemma = :lemma AND l.site = :site")
-    List<Lemma> findByLemmaAndSite(@Param("lemma") String lemma, @Param("site") String site);
+    List<Lemma> findLemmasByLemmaAndSite(@Param("lemma") String lemma, @Param("site") Site site);
 
     boolean existsLemmaByLemmaAndSite(String lemma, Site site);
 

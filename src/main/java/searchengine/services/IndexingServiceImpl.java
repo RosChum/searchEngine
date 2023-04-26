@@ -120,16 +120,18 @@ public class IndexingServiceImpl implements IndexingService {
     public ResultSearch searchPage(String query, String site) {
         ResultSearch resultSearch = new ResultSearch();
         List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
-        List<IndexSearch> foundListIndexSearchByFirstLemma;
+        Set<Page> foundListPageByFirstLemma;
         Set<IndexSearch> foundAllIndexFromQuery = new HashSet<>();
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
+        Set<Page> result = new HashSet<>();
         try {
             Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
             for (String lemmas : queryLemmas) {
                 if (site == null || site.isEmpty()) {
-                    foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas));
+                    foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas)); // находим все леммы из запроса
                 } else {
-                    foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaAndSite(lemmas, site));
+                    Site site1 = siteRepository.findByUrl(site);
+                    foundLemmaListFromQuery.addAll(lemmaRepository.findLemmasByLemmaAndSite(lemmas, site1));
                 }
             }
 
@@ -138,31 +140,22 @@ public class IndexingServiceImpl implements IndexingService {
                     .sorted(Comparator.comparing(Lemma::getFrequency)).toList();
 
             if (sortedFoundLemmaListFromQuery.size() > 0) {
-                foundListIndexSearchByFirstLemma = sortedFoundLemmaListFromQuery.stream().flatMap(s -> s.getIndexSearches().stream()
+                foundListPageByFirstLemma = sortedFoundLemmaListFromQuery.stream().flatMap(s -> s.getIndexSearches().stream()
                         .filter(f -> f.getLemma().getLemma().equals(sortedFoundLemmaListFromQuery.get(0).getLemma()))
-                        .flatMap(f -> f.getPage().getIndexSearches().stream())).collect(Collectors.toList()); //находим все страницы по первой лемме, получаем страницы, получаем леммы страниц
+                        .map(f -> f.getPage())).collect(Collectors.toSet()); //находим все страницы по первой лемме, получаем страницы
 
-                for (int i = 0; i < sortedFoundLemmaListFromQuery.size(); i++) {
-                    int finalI = i;
-                    foundAllIndexFromQuery = foundListIndexSearchByFirstLemma.stream()
-                            .filter(f -> f.getLemma().equals(sortedFoundLemmaListFromQuery.get(finalI))).collect(Collectors.toSet()); //кривой поиск страниц
-
-                }
-
+                result.addAll(searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery));
 
             } else {
                 return resultSearch;
             }
 
-
-            sortedFoundLemmaListFromQuery.forEach(f -> System.out.println(f.getId() + "   " + f.getLemma() + "    " + f.getFrequency()));
-
-            foundAllIndexFromQuery.forEach(f -> System.out.println(f.getPage().getSite().getUrl() + f.getPage().getPath()));
-
-
         } catch (IOException e) {
             e.printStackTrace();
+
         }
+
+        result.forEach(f -> System.out.println("output" + f.getSite().getUrl() + f.getPath()));
 
         return null;
 
@@ -184,12 +177,20 @@ public class IndexingServiceImpl implements IndexingService {
         forkJoinPool.shutdown();
     }
 
-    private List<Page> searchMatches(List<Lemma> sortedFoundLemmaListFromQuery, List<IndexSearch> foundListIndexSearchByFirstLemma, int countIteration) {
+    private Set<Page> searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery) {
+        Set<String> pagesMatchesLemmas = new HashSet<>();
+        Set<Page> workingListPage = new HashSet<>(Set.copyOf(foundListPageByFirstLemma));
 
-        List<Page> pagesMatchesLemmas = new ArrayList<>();
+        pagesMatchesLemmas.addAll(sortedFoundLemmaListFromQuery.stream().map(Lemma::getLemma).collect(Collectors.toSet()));
 
+        for (Page page : foundListPageByFirstLemma) {
+            Set<String> lemmasSetByPage = page.getIndexSearches().stream().map(f -> f.getLemma().getLemma()).collect(Collectors.toSet());
+            if (!lemmasSetByPage.containsAll(pagesMatchesLemmas))
+                workingListPage.remove(page);
 
-        return pagesMatchesLemmas;
+        }
+
+        return workingListPage;
 
     }
 
