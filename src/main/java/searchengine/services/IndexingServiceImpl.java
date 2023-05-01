@@ -1,9 +1,15 @@
 package searchengine.services;
 
+import jdk.jshell.Snippet;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
 import searchengine.dto.searchModel.ResultSearch;
-import searchengine.model.*;
+import searchengine.model.IndexingStatus;
+import searchengine.model.Lemma;
+import searchengine.model.Page;
+import searchengine.model.Site;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
@@ -17,6 +23,9 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -103,7 +112,6 @@ public class IndexingServiceImpl implements IndexingService {
 
         searchengine.config.Site siteFromConfig = sitesList.getSites().stream()
                 .filter(site1 -> site1.getUrl().contains(url.substring(url.indexOf("//"), url.lastIndexOf(".")))).findFirst().get();
-        System.out.println(siteFromConfig.getUrl());
         site.setName(siteFromConfig.getName());
         site.setUrl(siteFromConfig.getUrl());
         site.setStatus(IndexingStatus.INDEXING);
@@ -121,7 +129,6 @@ public class IndexingServiceImpl implements IndexingService {
         ResultSearch resultSearch = new ResultSearch();
         List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
         Set<Page> foundListPageByFirstLemma;
-        Set<IndexSearch> foundAllIndexFromQuery = new HashSet<>();
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
         Set<Page> result = new HashSet<>();
         try {
@@ -131,13 +138,13 @@ public class IndexingServiceImpl implements IndexingService {
                     foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas)); // находим все леммы из запроса
                 } else {
                     Site site1 = siteRepository.findByUrl(site);
-                    foundLemmaListFromQuery.addAll(lemmaRepository.findLemmasByLemmaAndSite(lemmas, site1));
+                    foundLemmaListFromQuery.addAll(lemmaRepository.findLemmasByLemmaAndSite(lemmas, site1));// находим все леммы из запроса на сайте
                 }
             }
 
             int countPage = pageRepository.findAll().size();
             List<Lemma> sortedFoundLemmaListFromQuery = foundLemmaListFromQuery.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
-                    .sorted(Comparator.comparing(Lemma::getFrequency)).toList();
+                    .sorted(Comparator.comparing(Lemma::getFrequency)).toList(); //находим все леммы из запроса, убираем часто встречающиеся, сортируем по возрастанию
 
             if (sortedFoundLemmaListFromQuery.size() > 0) {
                 foundListPageByFirstLemma = sortedFoundLemmaListFromQuery.stream().flatMap(s -> s.getIndexSearches().stream()
@@ -178,20 +185,54 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     private Set<Page> searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery) {
-        Set<String> pagesMatchesLemmas = new HashSet<>();
+        Set<String> getLemmasStringType = new HashSet<>();
         Set<Page> workingListPage = new HashSet<>(Set.copyOf(foundListPageByFirstLemma));
 
-        pagesMatchesLemmas.addAll(sortedFoundLemmaListFromQuery.stream().map(Lemma::getLemma).collect(Collectors.toSet()));
+        getLemmasStringType.addAll(sortedFoundLemmaListFromQuery.stream().map(Lemma::getLemma).collect(Collectors.toSet()));
 
         for (Page page : foundListPageByFirstLemma) {
             Set<String> lemmasSetByPage = page.getIndexSearches().stream().map(f -> f.getLemma().getLemma()).collect(Collectors.toSet());
-            if (!lemmasSetByPage.containsAll(pagesMatchesLemmas))
+            if (!lemmasSetByPage.containsAll(getLemmasStringType)) {
                 workingListPage.remove(page);
+            } else {
+                System.out.println("++++++++++++++++++++");
+                calculatingRelevance(page,getLemmasStringType);
+            }
 
         }
 
         return workingListPage;
 
+    }
+
+    //todo надо дописать.
+    private void calculatingRelevance(Page page, Set<String> lemmasListFromQuery) {
+
+        AtomicInteger rank = new AtomicInteger();
+        String snippet = "";
+        String title = "";
+
+        page.getIndexSearches().forEach(p -> {
+            if (lemmasListFromQuery.contains(p.getLemma().getLemma())) {
+                rank.addAndGet(p.getRank());
+
+                Document document = Jsoup.parse(p.getPage().getContent());
+                String regexSnippet = "(?s)(?<=^.{0,100}((?<!\\p{L})(" + p.getLemma().getLemma() + ")(?!\\p{L})).{0,100})[^.?!,;]*(\\p{Punct}[^.?!,;]*){0,2}(?=((?<!\\p{L})(\\.|\\?|\\!)))";
+                Pattern pattern = Pattern.compile(regexSnippet);
+                Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
+                System.out.println(p.getLemma().getLemma() +"\n"+ document.text());
+
+                while (matcher.find()){
+                    System.out.println(matcher.group());
+                }
+
+
+
+            }
+
+        });
+
+//        System.out.println(rank.get());
     }
 
 

@@ -9,7 +9,7 @@ public class ResultSearch {
 
     private boolean result;
     private int count;
-    private List<DtoSearchInfo> data;
+    private List<DtoSearchPageInfo> data;
 
 
 }
