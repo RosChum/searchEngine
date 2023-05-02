@@ -32,8 +32,8 @@ indexing-settings:
   sites:
 #    - url: https://www.lenta.ru
 #      name: Лента.ру
-#    - url: https://www.skillbox.ru
-#      name: Skillbox
+    - url: https://www.skillbox.ru
+      name: Skillbox
     - url: https://www.playback.ru
       name: PlayBack.Ru
 #    - url: http://radiomv.ru
@@ -50,5 +50,5 @@ indexing-settings:
 #      name: volochek
     - url: https://dimonvideo.ru
       name: dimonvideo
-    - url: https://et-cetera.ru/mobile
+    - url: https://et-cetera.ru
       name: ceteram
