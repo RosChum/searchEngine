@@ -130,7 +130,6 @@ public class IndexingServiceImpl implements IndexingService {
         List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
         Set<Page> foundListPageByFirstLemma;
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
-        Set<Page> result = new HashSet<>();
         try {
             Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
             for (String lemmas : queryLemmas) {
@@ -154,6 +153,7 @@ public class IndexingServiceImpl implements IndexingService {
                 resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery);
 
             } else {
+                resultSearch.setResult(false);
                 return resultSearch;
             }
 
@@ -193,7 +193,7 @@ public class IndexingServiceImpl implements IndexingService {
             if (!lemmasSetByPage.containsAll(getLemmasStringType)) {
                 workingListPage.remove(page);
             } else {
-               return getResultSearch(page, getLemmasStringType);
+                return getResultSearch(page, getLemmasStringType);
             }
 
         }

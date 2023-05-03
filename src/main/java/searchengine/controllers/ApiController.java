@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.config.SitesList;
 import searchengine.dto.StatusRequest;
+import searchengine.dto.searchModel.ResultSearch;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
@@ -88,14 +89,15 @@ public class ApiController {
             return ResponseEntity.ok(statusRequest);
         }
 
-        if (indexingService.searchPage(query, site) == null) {
+        ResultSearch resultSearch = indexingService.searchPage(query, site);
+        if (!resultSearch.isResult()) {
             statusRequest.setResult(false);
             statusRequest.setError("Указанная страница не найдена");
             return ResponseEntity.status(404).body(statusRequest);
         }
 
 
-        return ResponseEntity.ok(indexingService.searchPage(query, site));
+        return ResponseEntity.ok(resultSearch);
     }
 
 }
