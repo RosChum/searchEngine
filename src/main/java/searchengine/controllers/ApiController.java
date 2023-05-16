@@ -96,7 +96,6 @@ public class ApiController {
             return ResponseEntity.status(404).body(statusRequest);
         }
 
-
         return ResponseEntity.ok(resultSearch);
     }
 

@@ -6,10 +6,7 @@ import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
 import searchengine.dto.searchModel.DtoSearchPageInfo;
 import searchengine.dto.searchModel.ResultSearch;
-import searchengine.model.IndexingStatus;
-import searchengine.model.Lemma;
-import searchengine.model.Page;
-import searchengine.model.Site;
+import searchengine.model.*;
 import searchengine.repository.IndexSearchRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
@@ -24,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -185,60 +183,143 @@ public class IndexingServiceImpl implements IndexingService {
     private ResultSearch searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery) {
         Set<String> getLemmasStringType = new HashSet<>();
         Set<Page> workingListPage = new HashSet<>(Set.copyOf(foundListPageByFirstLemma));
-
+        System.out.println("изначальное количество страниц " + workingListPage.size());
         getLemmasStringType.addAll(sortedFoundLemmaListFromQuery.stream().map(Lemma::getLemma).collect(Collectors.toSet()));
-
         for (Page page : foundListPageByFirstLemma) {
             Set<String> lemmasSetByPage = page.getIndexSearches().stream().map(f -> f.getLemma().getLemma()).collect(Collectors.toSet());
             if (!lemmasSetByPage.containsAll(getLemmasStringType)) {
                 workingListPage.remove(page);
-            } else {
-                return getResultSearch(page, getLemmasStringType);
+
             }
 
-        }
 
-        return null;
+        }
+        System.out.println("кол-во страниц после удаления, на которых нет всех лемм " + workingListPage.size());
+        return getResultSearch(workingListPage, getLemmasStringType);
 
     }
 
-    private ResultSearch getResultSearch(Page page, Set<String> lemmasListFromQuery) {
+    private ResultSearch getResultSearch(Set<Page> pageSet, Set<String> lemmasListFromQuery) {
 
-        AtomicInteger calculatingRelevance = new AtomicInteger();
+
         StringBuilder snippet = new StringBuilder();
+        double absoluteRelevance = 0.0;
 
         ResultSearch resultSearch = new ResultSearch();
-        List<DtoSearchPageInfo> findPage = new ArrayList<>();
-        page.getIndexSearches().forEach(p -> {
-            if (lemmasListFromQuery.contains(p.getLemma().getLemma())) {
-                calculatingRelevance.addAndGet(p.getRank());
+        Set<DtoSearchPageInfo> findPage = new HashSet<>();
 
-                Document document = Jsoup.parse(p.getPage().getContent());
-                String regexSnippet = "(?<=[.!?]\\s).*\\b" + p.getLemma().getLemma() + "\\b.{0,100}[.!?]";
-                Pattern pattern = Pattern.compile(regexSnippet);
-                Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
+        for (Page page : pageSet) {
 
-                while (matcher.find()) {
-                    snippet.append(matcher.group());
-                }
-                DtoSearchPageInfo dtoSearchPageInfo = new DtoSearchPageInfo();
-                dtoSearchPageInfo.setRelevance(calculatingRelevance.get());
-                dtoSearchPageInfo.setSite(p.getPage().getSite().getUrl());
-                dtoSearchPageInfo.setSiteName(p.getPage().getSite().getName());
-                dtoSearchPageInfo.setSnippet(snippet.toString());
-                dtoSearchPageInfo.setTitle(document.select("title").text());
-                dtoSearchPageInfo.setUri(p.getPage().getPath());
+            List<IndexSearch> indexSearches = page.getIndexSearches();
+
+            Document document = Jsoup.parse(page.getContent());
+
+            DtoSearchPageInfo dtoSearchPageInfo = new DtoSearchPageInfo();
+                dtoSearchPageInfo.setRelevance(getAbsoluteRelevance(indexSearches, lemmasListFromQuery));
+                dtoSearchPageInfo.setSite(page.getSite().getUrl());
+                dtoSearchPageInfo.setSiteName(page.getSite().getName());
+                dtoSearchPageInfo.setSnippet(getSnippet(indexSearches));
+                dtoSearchPageInfo.setTitle(document.select("title").text() + " " + document.select("h1").text());
+                dtoSearchPageInfo.setUri(page.getPath());
+
                 findPage.add(dtoSearchPageInfo);
 
-            }
 
-        });
+
+        }
+
+
+//
+//
+//        pageSet.forEach(page1 -> page1.getIndexSearches().forEach(p -> {
+//
+//            if (lemmasListFromQuery.contains(p.getLemma().getLemma())) {
+//
+//                System.out.println(p.getRank() + " ----->>> " + p.getLemma().getLemma() + "   " + p.getPage().getSite().getUrl() + p.getPage().getPath());
+//
+//                calculatingRelevance.addAndGet(p.getRank());
+//
+//                Document document = Jsoup.parse(p.getPage().getContent());
+//                String regexSnippet = "(?<=[.!?]\\s).{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}[.!?]";
+////                String regexSnippet = ".{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}";
+//                Pattern pattern = Pattern.compile(regexSnippet);
+//                Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
+//
+//                while (matcher.find()) {
+//                    snippet.append(matcher.replaceAll("<b>" + p.getLemma().getLemma() + "</b>"));
+//                }
+//
+//                DtoSearchPageInfo dtoSearchPageInfo = new DtoSearchPageInfo();
+//                dtoSearchPageInfo.setRelevance(calculatingRelevance.get());
+//                dtoSearchPageInfo.setSite(p.getPage().getSite().getUrl());
+//                dtoSearchPageInfo.setSiteName(p.getPage().getSite().getName());
+//                dtoSearchPageInfo.setSnippet(snippet.toString());
+//                dtoSearchPageInfo.setTitle(document.select("title").text());
+//                dtoSearchPageInfo.setUri(p.getPage().getPath());
+//
+//                findPage.add(dtoSearchPageInfo);
+//
+//                snippet.delete(0, snippet.length());
+//
+//            }
+//
+//        }));
+
         resultSearch.setResult(true);
         resultSearch.setCount(findPage.size());
         resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).collect(Collectors.toList()));
 
+        resultSearch.getData().forEach(f -> System.out.println("relev: " + f.getRelevance() + " site: " + f.getSite() + f.getUri()));
+
         return resultSearch;
     }
+
+    // TODO: дописать реливантоность
+    private double getAbsoluteRelevance(List<IndexSearch> indexSearches, Set<String> lemmasListFromQuery) {
+
+        AtomicInteger absoluteRelevance = new AtomicInteger();
+        double relativeRelevance = 0;
+
+        indexSearches.forEach(i -> {
+
+            if (lemmasListFromQuery.contains(i.getLemma().getLemma()))
+                absoluteRelevance.addAndGet(i.getRank());
+
+        });
+
+
+        return absoluteRelevance.doubleValue();
+    }
+
+    // TODO: дописать сниппет
+    private String getSnippet(List<IndexSearch> indexSearches) {
+
+        StringBuilder snippet = new StringBuilder();
+        indexSearches.forEach(p -> {
+
+            Document document = Jsoup.parse(p.getPage().getContent());
+//            String regexSnippet = "(?<=[.!?]\\s).{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}[.!?]";
+//                String regexSnippet = ".{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}";
+            String regexSnippet = p.getLemma().getLemma() ;
+
+            Pattern pattern = Pattern.compile(regexSnippet);
+            Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
+
+            while (matcher.find()) {
+//                snippet.append(matcher.replaceAll("<b>" + p.getLemma().getLemma() + "</b>"));
+                snippet.append( "lemma "+ p.getLemma().getLemma() +" found " +   matcher.group());
+            }
+
+        });
+        System.out.println(snippet.toString());
+
+        return snippet.toString();
+    }
+    private String getTitle(Document document){
+        return document.select("title").text();
+    }
+
+
 
 
 }
