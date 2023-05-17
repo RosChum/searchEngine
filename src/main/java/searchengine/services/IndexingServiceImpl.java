@@ -21,7 +21,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -183,7 +182,6 @@ public class IndexingServiceImpl implements IndexingService {
     private ResultSearch searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery) {
         Set<String> getLemmasStringType = new HashSet<>();
         Set<Page> workingListPage = new HashSet<>(Set.copyOf(foundListPageByFirstLemma));
-        System.out.println("изначальное количество страниц " + workingListPage.size());
         getLemmasStringType.addAll(sortedFoundLemmaListFromQuery.stream().map(Lemma::getLemma).collect(Collectors.toSet()));
         for (Page page : foundListPageByFirstLemma) {
             Set<String> lemmasSetByPage = page.getIndexSearches().stream().map(f -> f.getLemma().getLemma()).collect(Collectors.toSet());
@@ -192,18 +190,12 @@ public class IndexingServiceImpl implements IndexingService {
 
             }
 
-
         }
-        System.out.println("кол-во страниц после удаления, на которых нет всех лемм " + workingListPage.size());
         return getResultSearch(workingListPage, getLemmasStringType);
 
     }
 
     private ResultSearch getResultSearch(Set<Page> pageSet, Set<String> lemmasListFromQuery) {
-
-
-        StringBuilder snippet = new StringBuilder();
-        double absoluteRelevance = 0.0;
 
         ResultSearch resultSearch = new ResultSearch();
         Set<DtoSearchPageInfo> findPage = new HashSet<>();
@@ -215,70 +207,30 @@ public class IndexingServiceImpl implements IndexingService {
             Document document = Jsoup.parse(page.getContent());
 
             DtoSearchPageInfo dtoSearchPageInfo = new DtoSearchPageInfo();
-                dtoSearchPageInfo.setRelevance(getAbsoluteRelevance(indexSearches, lemmasListFromQuery));
-                dtoSearchPageInfo.setSite(page.getSite().getUrl());
-                dtoSearchPageInfo.setSiteName(page.getSite().getName());
-                dtoSearchPageInfo.setSnippet(getSnippet(indexSearches));
-                dtoSearchPageInfo.setTitle(document.select("title").text() + " " + document.select("h1").text());
-                dtoSearchPageInfo.setUri(page.getPath());
+            dtoSearchPageInfo.setRelevance(getAbsoluteRelevance(indexSearches, lemmasListFromQuery));
+            dtoSearchPageInfo.setSite(page.getSite().getUrl());
+            dtoSearchPageInfo.setSiteName(page.getSite().getName());
+            dtoSearchPageInfo.setSnippet(getSnippet(indexSearches, lemmasListFromQuery));
+            dtoSearchPageInfo.setTitle(getTitle(document));
+            dtoSearchPageInfo.setUri(page.getPath());
 
-                findPage.add(dtoSearchPageInfo);
-
-
+            findPage.add(dtoSearchPageInfo);
 
         }
+        getRelativeRelevance(findPage);
 
-
-//
-//
-//        pageSet.forEach(page1 -> page1.getIndexSearches().forEach(p -> {
-//
-//            if (lemmasListFromQuery.contains(p.getLemma().getLemma())) {
-//
-//                System.out.println(p.getRank() + " ----->>> " + p.getLemma().getLemma() + "   " + p.getPage().getSite().getUrl() + p.getPage().getPath());
-//
-//                calculatingRelevance.addAndGet(p.getRank());
-//
-//                Document document = Jsoup.parse(p.getPage().getContent());
-//                String regexSnippet = "(?<=[.!?]\\s).{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}[.!?]";
-////                String regexSnippet = ".{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}";
-//                Pattern pattern = Pattern.compile(regexSnippet);
-//                Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
-//
-//                while (matcher.find()) {
-//                    snippet.append(matcher.replaceAll("<b>" + p.getLemma().getLemma() + "</b>"));
-//                }
-//
-//                DtoSearchPageInfo dtoSearchPageInfo = new DtoSearchPageInfo();
-//                dtoSearchPageInfo.setRelevance(calculatingRelevance.get());
-//                dtoSearchPageInfo.setSite(p.getPage().getSite().getUrl());
-//                dtoSearchPageInfo.setSiteName(p.getPage().getSite().getName());
-//                dtoSearchPageInfo.setSnippet(snippet.toString());
-//                dtoSearchPageInfo.setTitle(document.select("title").text());
-//                dtoSearchPageInfo.setUri(p.getPage().getPath());
-//
-//                findPage.add(dtoSearchPageInfo);
-//
-//                snippet.delete(0, snippet.length());
-//
-//            }
-//
-//        }));
+        findPage.forEach(f -> System.out.println(f.getSite() + "\n" + f.getUri() + "\n" + f.getRelevance()));
 
         resultSearch.setResult(true);
         resultSearch.setCount(findPage.size());
         resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).collect(Collectors.toList()));
 
-        resultSearch.getData().forEach(f -> System.out.println("relev: " + f.getRelevance() + " site: " + f.getSite() + f.getUri()));
-
         return resultSearch;
     }
 
-    // TODO: дописать реливантоность
     private double getAbsoluteRelevance(List<IndexSearch> indexSearches, Set<String> lemmasListFromQuery) {
 
         AtomicInteger absoluteRelevance = new AtomicInteger();
-        double relativeRelevance = 0;
 
         indexSearches.forEach(i -> {
 
@@ -287,39 +239,50 @@ public class IndexingServiceImpl implements IndexingService {
 
         });
 
-
         return absoluteRelevance.doubleValue();
     }
 
-    // TODO: дописать сниппет
-    private String getSnippet(List<IndexSearch> indexSearches) {
+    private String getSnippet(List<IndexSearch> indexSearches, Set<String> lemmasListFromQuery) {
 
         StringBuilder snippet = new StringBuilder();
         indexSearches.forEach(p -> {
 
-            Document document = Jsoup.parse(p.getPage().getContent());
-//            String regexSnippet = "(?<=[.!?]\\s).{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}[.!?]";
-//                String regexSnippet = ".{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}";
-            String regexSnippet = p.getLemma().getLemma() ;
+            if (lemmasListFromQuery.contains(p.getLemma().getLemma())) {
+                Document document = Jsoup.parse(p.getPage().getContent());
+//                String regexSnippet = "(?<=[.!?]\\s).{0,100}\\b" + p.getLemma().getLemma() + "\\b.{0,100}[.!?]";
+                String regexSnippet = ".{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}";
 
-            Pattern pattern = Pattern.compile(regexSnippet);
-            Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
+                Pattern pattern = Pattern.compile(regexSnippet);
+                Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
 
-            while (matcher.find()) {
-//                snippet.append(matcher.replaceAll("<b>" + p.getLemma().getLemma() + "</b>"));
-                snippet.append( "lemma "+ p.getLemma().getLemma() +" found " +   matcher.group());
+                while (matcher.find()) {
+                    String substring = matcher.group();
+                    snippet.append(substring.replaceAll(p.getLemma().getLemma(), "<b>" + p.getLemma().getLemma() + "</b>"));
+                }
             }
-
         });
-        System.out.println(snippet.toString());
 
         return snippet.toString();
     }
-    private String getTitle(Document document){
-        return document.select("title").text();
+
+    private String getTitle(Document document) {
+        return document.select("title").text() + "\n" + document.select("h2").text();
     }
 
+    private void getRelativeRelevance(Set<DtoSearchPageInfo> findPage) {
 
+        List<DtoSearchPageInfo> workList = findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance)).collect(Collectors.toList());
+
+        double tmp;
+
+        for (DtoSearchPageInfo dtoSearchPageInfo : workList) {
+
+            tmp = dtoSearchPageInfo.getRelevance() / workList.get(workList.size() - 1).getRelevance();
+            dtoSearchPageInfo.setRelevance(Math.floor(tmp * 100) / 100);
+        }
+
+
+    }
 
 
 }
