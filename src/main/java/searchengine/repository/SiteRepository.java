@@ -27,4 +27,9 @@ public interface SiteRepository extends JpaRepository<Site, Integer> {
     @Modifying(clearAutomatically = true)
     void updateStatus(@Param("name") String name, @Param("status") IndexingStatus status, @Param("error")
             String error, @Param("time") LocalDateTime statusTime);
+
+    @Transactional
+    @Query("UPDATE Site s set s.statusTime = :time WHERE s.name = :name")
+    @Modifying(clearAutomatically = true)
+    void updateStatusTime(@Param("name") String name, @Param("time") LocalDateTime statusTime);
 }

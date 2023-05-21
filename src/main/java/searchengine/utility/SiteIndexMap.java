@@ -52,6 +52,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
         try {
 
+
             Thread.sleep(250);
 
             Document document = Jsoup.connect(url).get();
@@ -67,8 +68,9 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
 
-                    //TODO fix
-//                    siteRepository.findByUrl(site.getUrl()).setStatusTime(LocalDateTime.now());
+                    synchronized (SiteIndexMap.class) {
+                        siteRepository.updateStatusTime(site.getName(), LocalDateTime.now());
+                    }
 
                     if (responseCode.statusCode() == 200) {
                         addLemmaDB(document.text(), site);
@@ -112,6 +114,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
 
     private synchronized void addPageInDb(String path, int codeResponse, String content, Site site) {
+
         page = new Page();
         page.setPath(path.substring(site.getUrl().length()));
         page.setCodeResponse(codeResponse);
@@ -129,8 +132,10 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
     private synchronized void addLemmaDB(String text, Site site) {
 
+
         if (!stop) {
             try {
+
                 lemmas = lemmaСonverter.convertTextToLemmas(text);
                 lemmas.forEach((keyLemma, value) -> {
                     lemma = new Lemma();
@@ -139,7 +144,9 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                     lemma.setFrequency(1);
 
                     if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
-                        lemmaRepository.updateFrequency(keyLemma, site);
+                        synchronized (LemmaRepository.class) {
+                            lemmaRepository.updateFrequency(keyLemma, site);
+                        }
                         lemma = lemmaRepository.findByLemmaAndSite(keyLemma, site);
                         addIndexDB(lemma, page, value);
 
@@ -153,6 +160,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
         } else {
             lemmas.clear();
             ForkJoinWorkerThread.currentThread().interrupt();
@@ -167,6 +175,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
         indexSearch.setRank(value);
         indexSearchRepository.save(indexSearch);
     }
+
 
 }
 

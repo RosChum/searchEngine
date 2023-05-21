@@ -83,7 +83,7 @@ public class ApiController {
     public ResponseEntity<?> search(@RequestParam(name = "query") String query, @RequestParam(required = false, name = ("site")) String site) {
         StatusRequest statusRequest = new StatusRequest();
 
-        if (query.isEmpty()) {
+        if (query.isEmpty() || query.equals("\s")) {
             statusRequest.setResult(false);
             statusRequest.setError("Задан пустой поисковый запрос");
             return ResponseEntity.ok(statusRequest);

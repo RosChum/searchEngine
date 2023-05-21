@@ -22,10 +22,6 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
 
     List<Lemma> findByLemmaOrderByFrequencyAsc(String text);
 
-    boolean existsByLemma(Lemma lemma);
-
-    List<Lemma> findByLemma(String lemma);
-
     List<Lemma> findBySite(Site site);
 
     Lemma findByLemmaAndSite(String lemma, Site site);

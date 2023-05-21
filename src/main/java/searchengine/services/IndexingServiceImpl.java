@@ -219,8 +219,6 @@ public class IndexingServiceImpl implements IndexingService {
         }
         getRelativeRelevance(findPage);
 
-        findPage.forEach(f -> System.out.println(f.getSite() + "\n" + f.getUri() + "\n" + f.getRelevance()));
-
         resultSearch.setResult(true);
         resultSearch.setCount(findPage.size());
         resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).collect(Collectors.toList()));
