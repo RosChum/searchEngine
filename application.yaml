@@ -19,7 +19,7 @@ spring:
 #          batch_size: 4000
       dialect: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
 
 #logging:

@@ -1,5 +1,6 @@
 package searchengine.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class IndexingServiceImpl implements IndexingService {
 
 
@@ -158,6 +160,7 @@ public class IndexingServiceImpl implements IndexingService {
             e.printStackTrace();
 
         }
+
 
         return resultSearch;
 

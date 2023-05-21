@@ -1,5 +1,6 @@
 package searchengine.utility;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -18,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.RecursiveTask;
-
+@Slf4j
 public class SiteIndexMap extends RecursiveTask<Site> {
 
     private String url;
@@ -55,7 +56,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
             Thread.sleep(250);
 
-            Document document = Jsoup.connect(url).get();
+            Document document = Jsoup.connect(url).ignoreHttpErrors(true).get();
 
             Elements elements = document.select("a[href]");
 
@@ -97,6 +98,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
         } catch (IOException | InterruptedException exception) {
             exception.printStackTrace();
+            log.error(exception.toString());
             site.setStatus(IndexingStatus.FAILED);
             site.setLastError(exception.toString());
             site.setStatusTime(LocalDateTime.now());
