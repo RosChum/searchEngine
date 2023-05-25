@@ -6,27 +6,19 @@ spring:
     username: root
     password: 123456789
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
-#  output:
-#    ansi:
-#      enabled: ALWAYS
-
+  http:
+    client:
+      user-agent: Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6
+      default-headers:
+        Referer: http://www.google.com
   jpa:
     properties:
       hibernate:
-#        generate_statistics: true
-#        order_inserts: true
-#        jdbc:
-#          batch_size: 4000
       dialect: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
 
-#logging:
-#  level:
-#    root: info
-#  file:
-#    name: log.txt
 
 indexing-settings:
   sites:
@@ -38,17 +30,19 @@ indexing-settings:
       name: PlayBack.Ru
 #    - url: http://radiomv.ru
 #      name: radiomv
-#    - url: https://www.lutherancathedral.ru
-#      name: lutherancathedral
-#    - url: https://ipfran.ru
-#      name: ipfran.ru
+    - url: https://www.lutherancathedral.ru
+      name: lutherancathedral
+    - url: https://ipfran.ru
+      name: ipfran.ru
     - url: https://dombulgakova.ru
       name: dombulgakova
 #    - url: https://www.nikoartgallery.com
 #      name: nikoartgallery.com
 #    - url: https://volochek.life
 #      name: volochek
-    - url: https://dimonvideo.ru
-      name: dimonvideo
+#    - url: https://dimonvideo.ru
+#      name: dimonvideo
     - url: https://et-cetera.ru
       name: ceteram
+
+

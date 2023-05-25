@@ -26,7 +26,7 @@ public class Lemma {
     private Integer frequency;
 
     @OneToMany(mappedBy = "lemma", cascade = CascadeType.ALL)
-    private List <IndexSearch> indexSearches;
+    private List <Index> indexSearches;
 
 
 }

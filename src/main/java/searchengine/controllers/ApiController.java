@@ -1,5 +1,6 @@
 package searchengine.controllers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import searchengine.services.StatisticsService;
 
 @RestController
 @RequestMapping("/api")
+@Slf4j
 public class ApiController {
 
     private final StatisticsService statisticsService;
@@ -62,11 +64,17 @@ public class ApiController {
 
     @PostMapping(value = "/indexPage", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StatusRequest> indexPage(@RequestParam String url) {
-        String urlAddress = url.replace("www.", "");
+
+//        String urlAddress = url.replace("www.", "");
         StatusRequest statusRequest = new StatusRequest();
-        if (indexingService.getListSiteIndexing().stream().anyMatch(s -> s.getUrl().contains(urlAddress))) {
+//        if (indexingService.getListSiteIndexing().stream().anyMatch(s -> s.getUrl().contains(urlAddress))) {
+//            statusRequest.setResult(true);
+//            indexingService.indexPage(urlAddress);
+
+        if (indexingService.checkAndGetPageFromDB(url) != null){
+
+//            indexingService.indexPage(url);
             statusRequest.setResult(true);
-            indexingService.indexPage(urlAddress);
             return ResponseEntity.ok(statusRequest);
         } else {
             statusRequest.setResult(false);

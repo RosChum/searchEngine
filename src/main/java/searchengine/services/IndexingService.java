@@ -1,6 +1,7 @@
 package searchengine.services;
 
 import searchengine.dto.searchModel.ResultSearch;
+import searchengine.model.Page;
 import searchengine.model.Site;
 
 import java.util.List;
@@ -18,4 +19,5 @@ public interface IndexingService {
     void indexPage(String url);
 
     ResultSearch searchPage(String query, String site);
+    boolean checkAndGetPageFromDB(String url);
 }

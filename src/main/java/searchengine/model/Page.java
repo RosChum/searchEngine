@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(indexes = @Index(name = "path_index", columnList = "path"))
+@Table(indexes = @javax.persistence.Index(name = "path_index", columnList = "path"))
 public class Page {
 
     @Id
@@ -20,6 +20,7 @@ public class Page {
     @JoinColumn(name = "site_id", referencedColumnName = "id", nullable = false)
     private Site site;
 
+    //TODO при добавлении (columnDefinition = "TEXT") возникает ошибка BLOB/TEXT column 'path' used in key specification without a key length
     @Column(name = "path", nullable = false)
     private String path;
 
@@ -29,8 +30,8 @@ public class Page {
     @Column(columnDefinition = "MEDIUMTEXT", nullable = false)
     private String content;
 
-    @OneToMany(mappedBy = "page",cascade = CascadeType.ALL)
-    private List<IndexSearch> indexSearches;
+    @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
+    private List<Index> indexSearches;
 
 
 }

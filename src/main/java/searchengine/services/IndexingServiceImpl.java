@@ -8,12 +8,12 @@ import searchengine.config.SitesList;
 import searchengine.dto.searchModel.DtoSearchPageInfo;
 import searchengine.dto.searchModel.ResultSearch;
 import searchengine.model.*;
-import searchengine.repository.IndexSearchRepository;
+import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 import searchengine.utility.LemmaСonverter;
-import searchengine.utility.SiteIndexMap;
+import searchengine.utility.SiteIndexing;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -37,12 +37,10 @@ public class IndexingServiceImpl implements IndexingService {
     private ForkJoinPool forkJoinPool;
     private ThreadPoolExecutor threadPoolExecutor;
     private LemmaRepository lemmaRepository;
-    private IndexSearchRepository indexSearchRepository;
-    private ResultSearch resultSearch;
-
+    private IndexRepository indexSearchRepository;
 
     public IndexingServiceImpl(SiteRepository siteRepository, PageRepository pageRepository, SitesList sitesList,
-                               LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
+                               LemmaRepository lemmaRepository, IndexRepository indexSearchRepository) {
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
         this.sitesList = sitesList;
@@ -81,7 +79,7 @@ public class IndexingServiceImpl implements IndexingService {
     public void stopIndexing() {
         if (statusIndexing()) {
             threadPoolExecutor.shutdownNow();
-            SiteIndexMap.stop = true;
+            SiteIndexing.stop = true;
             ForkJoinPool.commonPool().shutdownNow();
 
         }
@@ -106,6 +104,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public void indexPage(String url) {
         Site site = new Site();
+
 
         siteRepository.delete(siteRepository.findByUrl(url));
 
@@ -168,15 +167,15 @@ public class IndexingServiceImpl implements IndexingService {
 
 
     private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site,
-                                  LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
-        SiteIndexMap.stop = false;
-        SiteIndexMap siteIndexMap = new SiteIndexMap(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
-        forkJoinPool = new ForkJoinPool(10);
+                                  LemmaRepository lemmaRepository, IndexRepository indexSearchRepository) {
+        SiteIndexing.stop = false;
+        SiteIndexing siteIndexMap = new SiteIndexing(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
+        forkJoinPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
         Site site1 = forkJoinPool.invoke(siteIndexMap);
         if (site1.getStatus() != IndexingStatus.FAILED) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());
         }
-        if (site1.getStatus() != IndexingStatus.FAILED && site1.getStatus() != IndexingStatus.INDEXED && SiteIndexMap.stop) {
+        if (site1.getStatus() != IndexingStatus.FAILED && site1.getStatus() != IndexingStatus.INDEXED && SiteIndexing.stop) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
         }
         forkJoinPool.shutdown();
@@ -205,7 +204,7 @@ public class IndexingServiceImpl implements IndexingService {
 
         for (Page page : pageSet) {
 
-            List<IndexSearch> indexSearches = page.getIndexSearches();
+            List<Index> indexSearches = page.getIndexSearches();
 
             Document document = Jsoup.parse(page.getContent());
 
@@ -229,7 +228,7 @@ public class IndexingServiceImpl implements IndexingService {
         return resultSearch;
     }
 
-    private double getAbsoluteRelevance(List<IndexSearch> indexSearches, Set<String> lemmasListFromQuery) {
+    private double getAbsoluteRelevance(List<Index> indexSearches, Set<String> lemmasListFromQuery) {
 
         AtomicInteger absoluteRelevance = new AtomicInteger();
 
@@ -243,7 +242,7 @@ public class IndexingServiceImpl implements IndexingService {
         return absoluteRelevance.doubleValue();
     }
 
-    private String getSnippet(List<IndexSearch> indexSearches, Set<String> lemmasListFromQuery) {
+    private String getSnippet(List<Index> indexSearches, Set<String> lemmasListFromQuery) {
 
         StringBuilder snippet = new StringBuilder();
         indexSearches.forEach(p -> {
@@ -282,6 +281,37 @@ public class IndexingServiceImpl implements IndexingService {
             dtoSearchPageInfo.setRelevance(Math.floor(tmp * 100) / 100);
         }
 
+
+    }
+
+    //TODO не правильная логика, не соответствует заданию
+    @Override
+    public boolean checkAndGetPageFromDB(String url) {
+
+        Site site = new Site();
+        Page page = new Page();
+        String urlSite = url.replace("www", "");
+        String regexSite = "h.*//[^/]*";
+        Pattern pattern = Pattern.compile(regexSite);
+        Matcher matcher = pattern.matcher(urlSite);
+        while (matcher.find()) {
+            site = siteRepository.findByUrl(matcher.group());
+        }
+        if (site == null) return false;
+
+        String regexForPagePath = "(?<=[^/])/{1}(?=[^/]).*";
+        pattern = Pattern.compile(regexForPagePath);
+        matcher = pattern.matcher(url);
+        while (matcher.find()) {
+            page = pageRepository.findByPathAndSite(matcher.group(), site);
+            if (page != null) {
+                pageRepository.delete(page);
+            }
+            //надо написать, так чтобы обходил только одну страницу
+            walkAndIndexSite(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
+        }
+
+        return true;
 
     }
 

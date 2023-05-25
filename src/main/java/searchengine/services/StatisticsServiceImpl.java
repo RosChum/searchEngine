@@ -9,7 +9,7 @@ import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
 import searchengine.model.Site;
-import searchengine.repository.IndexSearchRepository;
+import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
@@ -33,7 +33,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     @Autowired
     private LemmaRepository lemmaRepository;
     @Autowired
-    private IndexSearchRepository indexSearchRepository;
+    private IndexRepository indexSearchRepository;
 
 
     @Override

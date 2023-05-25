@@ -7,7 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import searchengine.model.*;
-import searchengine.repository.IndexSearchRepository;
+import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
@@ -19,8 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.RecursiveTask;
+
 @Slf4j
-public class SiteIndexMap extends RecursiveTask<Site> {
+public class SiteIndexing extends RecursiveTask<Site> {
 
     private String url;
     private String childUrl;
@@ -28,18 +29,18 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     private Site site;
     private SiteRepository siteRepository;
     private PageRepository pageRepository;
-    private List<SiteIndexMap> task = new ArrayList<>();
+    private List<SiteIndexing> task = new ArrayList<>();
     private LemmaRepository lemmaRepository;
-    private IndexSearchRepository indexSearchRepository;
+    private IndexRepository indexSearchRepository;
     private Lemma lemma;
     private LemmaСonverter lemmaСonverter = new LemmaСonverter();
-    private IndexSearch indexSearch;
+    private Index indexSearch;
     public static boolean stop;
     private HashMap<String, Integer> lemmas;
 
 
-    public SiteIndexMap(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site,
-                        LemmaRepository lemmaRepository, IndexSearchRepository indexSearchRepository) {
+    public SiteIndexing(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site,
+                        LemmaRepository lemmaRepository, IndexRepository indexSearchRepository) {
         this.url = url;
         this.siteRepository = siteRepository;
         this.pageRepository = pageRepository;
@@ -52,7 +53,6 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     protected Site compute() {
 
         try {
-
 
             Thread.sleep(250);
 
@@ -69,7 +69,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
 
-                    synchronized (SiteIndexMap.class) {
+                    synchronized (SiteIndexing.class) {
                         siteRepository.updateStatusTime(site.getName(), LocalDateTime.now());
                     }
 
@@ -77,12 +77,14 @@ public class SiteIndexMap extends RecursiveTask<Site> {
                         addLemmaDB(document.text(), site);
                     }
 
-                    SiteIndexMap siteIndexMap = new SiteIndexMap(childUrl, siteRepository, pageRepository, site,
+                    SiteIndexing siteIndexMap = new SiteIndexing(childUrl, siteRepository, pageRepository, site,
                             lemmaRepository, indexSearchRepository);
 
                     if (stop) {
                         task.clear();
-                        ForkJoinWorkerThread.currentThread().interrupt();
+                        return;
+
+//                        ForkJoinWorkerThread.currentThread().interrupt();
                     } else {
                         siteIndexMap.fork();
                         task.add(siteIndexMap);
@@ -93,11 +95,10 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
 
         } catch (HttpStatusException ex) {
-            ex.printStackTrace();
-            addPageInDb(url, ex.getStatusCode(), ex.toString(), site);
+            log.error(ex.toString());
+            addPageInDb(url, ex.getStatusCode(), ex.getMessage(), site);
 
         } catch (IOException | InterruptedException exception) {
-            exception.printStackTrace();
             log.error(exception.toString());
             site.setStatus(IndexingStatus.FAILED);
             site.setLastError(exception.toString());
@@ -107,7 +108,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
 
         }
 
-        for (SiteIndexMap site1 : task) {
+        for (SiteIndexing site1 : task) {
             site1.join();
         }
 
@@ -127,7 +128,6 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     }
 
     private boolean checkURL(String url, Site site) {
-
         return url.startsWith(this.url) && url.endsWith("/") &&
                 !pageRepository.existsByPath(url.substring(site.getUrl().length()));
     }
@@ -171,7 +171,7 @@ public class SiteIndexMap extends RecursiveTask<Site> {
     }
 
     private synchronized void addIndexDB(Lemma lemma, Page page, int value) {
-        indexSearch = new IndexSearch();
+        indexSearch = new Index();
         indexSearch.setLemma(lemma);
         indexSearch.setPage(page);
         indexSearch.setRank(value);
