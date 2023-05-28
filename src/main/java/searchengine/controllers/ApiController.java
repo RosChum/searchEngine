@@ -2,6 +2,11 @@ package searchengine.controllers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -64,31 +69,27 @@ public class ApiController {
 
     @PostMapping(value = "/indexPage", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StatusRequest> indexPage(@RequestParam String url) {
-
-//        String urlAddress = url.replace("www.", "");
         StatusRequest statusRequest = new StatusRequest();
-//        if (indexingService.getListSiteIndexing().stream().anyMatch(s -> s.getUrl().contains(urlAddress))) {
-//            statusRequest.setResult(true);
-//            indexingService.indexPage(urlAddress);
-
-        if (indexingService.checkAndGetPageFromDB(url) != null){
-
-//            indexingService.indexPage(url);
+        if (indexingService.getSiteFromDB(url) != null) {
+            indexingService.indexPage(url, indexingService.getSiteFromDB(url));
             statusRequest.setResult(true);
-            return ResponseEntity.ok(statusRequest);
         } else {
             statusRequest.setResult(false);
             statusRequest.setError("Данная страница находится за пределами сайтов, " +
                     "указанных в конфигурационном файле");
-
-            return ResponseEntity.ok(statusRequest);
         }
 
+        return ResponseEntity.ok(statusRequest);
 
     }
 
     @GetMapping(value = "/search")
-    public ResponseEntity<?> search(@RequestParam(name = "query") String query, @RequestParam(required = false, name = ("site")) String site) {
+
+    public ResponseEntity<?> search(@RequestParam(name = "query") String query, @RequestParam(name = "offset") Integer offset,
+                                    @RequestParam(name = "limit") Integer limit, @RequestParam(required = false, name = ("site")) String site) {
+
+        Pageable pageable = PageRequest.of(10, 10);
+
         StatusRequest statusRequest = new StatusRequest();
 
         if (query.isEmpty() || query.equals("\s")) {
@@ -97,7 +98,7 @@ public class ApiController {
             return ResponseEntity.ok(statusRequest);
         }
 
-        ResultSearch resultSearch = indexingService.searchPage(query, site);
+        ResultSearch resultSearch = indexingService.searchPage(query, site, pageable);
         if (!resultSearch.isResult()) {
             statusRequest.setResult(false);
             statusRequest.setError("Указанная страница не найдена");
@@ -106,5 +107,6 @@ public class ApiController {
 
         return ResponseEntity.ok(resultSearch);
     }
+
 
 }

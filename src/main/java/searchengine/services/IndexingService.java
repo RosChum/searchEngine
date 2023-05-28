@@ -1,7 +1,7 @@
 package searchengine.services;
 
+import org.springframework.data.domain.Pageable;
 import searchengine.dto.searchModel.ResultSearch;
-import searchengine.model.Page;
 import searchengine.model.Site;
 
 import java.util.List;
@@ -16,8 +16,9 @@ public interface IndexingService {
 
     List<Site> getListSiteIndexing();
 
-    void indexPage(String url);
+    void indexPage(String url, Site site);
 
-    ResultSearch searchPage(String query, String site);
-    boolean checkAndGetPageFromDB(String url);
+    ResultSearch searchPage(String query, String site, Pageable pageable);
+
+    Site getSiteFromDB(String url);
 }

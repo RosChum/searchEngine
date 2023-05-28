@@ -3,6 +3,7 @@ package searchengine.services;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
 import searchengine.dto.searchModel.DtoSearchPageInfo;
@@ -53,7 +54,7 @@ public class IndexingServiceImpl implements IndexingService {
     public void startIndexing() {
         threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(sitesList.getSites().size());
         sitesList.getSites().forEach(siteFromAppProperties -> {
-            siteFromAppProperties.setUrl(siteFromAppProperties.getUrl().replace("www.", ""));
+            siteFromAppProperties.setUrl(bringingWebsiteAddressToSingleFormat(siteFromAppProperties.getUrl()));
             if (siteRepository.existsByUrl(siteFromAppProperties.getUrl())) {
                 siteRepository.delete(siteRepository.findByUrl(siteFromAppProperties.getUrl()));
             }
@@ -102,28 +103,28 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     @Override
-    public void indexPage(String url) {
-        Site site = new Site();
+    public void indexPage(String url, Site site) {
+        String urlSite = bringingWebsiteAddressToSingleFormat(url);
+        Page page = new Page();
+        String regexForPagePath = "(?<=[^/])/{1}(?=[^/]).*";
+        Pattern pattern = Pattern.compile(regexForPagePath);
+        Matcher matcher = pattern.matcher(url);
 
+        while (matcher.find()) {
+            page = pageRepository.findByPathAndSite(matcher.group(), site);
 
-        siteRepository.delete(siteRepository.findByUrl(url));
+            if (pageRepository.existsByPathAndSite(matcher.group(), site)) {
+                pageRepository.delete(page);
+            }
 
-        searchengine.config.Site siteFromConfig = sitesList.getSites().stream()
-                .filter(site1 -> site1.getUrl().contains(url.substring(url.indexOf("//"), url.lastIndexOf(".")))).findFirst().get();
-        site.setName(siteFromConfig.getName());
-        site.setUrl(siteFromConfig.getUrl());
-        site.setStatus(IndexingStatus.INDEXING);
-        site.setStatusTime(LocalDateTime.now());
-        site.setLastError(null);
+        }
 
-        siteRepository.save(site);
-
-        walkAndIndexSite(site.getUrl(), siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
+        walkAndIndexSite(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
 
     }
 
     @Override
-    public ResultSearch searchPage(String query, String site) {
+    public ResultSearch searchPage(String query, String site, Pageable pageable) {
         ResultSearch resultSearch = new ResultSearch();
         List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
         Set<Page> foundListPageByFirstLemma;
@@ -149,6 +150,7 @@ public class IndexingServiceImpl implements IndexingService {
                         .map(f -> f.getPage())).collect(Collectors.toSet()); //находим все страницы по первой лемме, получаем страницы
 
                 resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery);
+                resultSearch.setPageable(pageable);
 
             } else {
                 resultSearch.setResult(false);
@@ -284,35 +286,22 @@ public class IndexingServiceImpl implements IndexingService {
 
     }
 
-    //TODO не правильная логика, не соответствует заданию
     @Override
-    public boolean checkAndGetPageFromDB(String url) {
+    public Site getSiteFromDB(String url) {
 
         Site site = new Site();
-        Page page = new Page();
-        String urlSite = url.replace("www", "");
+        String urlSite = bringingWebsiteAddressToSingleFormat(url);
         String regexSite = "h.*//[^/]*";
         Pattern pattern = Pattern.compile(regexSite);
         Matcher matcher = pattern.matcher(urlSite);
         while (matcher.find()) {
             site = siteRepository.findByUrl(matcher.group());
         }
-        if (site == null) return false;
+        return site;
+    }
 
-        String regexForPagePath = "(?<=[^/])/{1}(?=[^/]).*";
-        pattern = Pattern.compile(regexForPagePath);
-        matcher = pattern.matcher(url);
-        while (matcher.find()) {
-            page = pageRepository.findByPathAndSite(matcher.group(), site);
-            if (page != null) {
-                pageRepository.delete(page);
-            }
-            //надо написать, так чтобы обходил только одну страницу
-            walkAndIndexSite(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
-        }
-
-        return true;
-
+    private String bringingWebsiteAddressToSingleFormat(String url) {
+        return url.replace("www", "");
     }
 
 
