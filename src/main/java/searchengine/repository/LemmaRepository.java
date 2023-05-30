@@ -20,7 +20,7 @@ public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     @Modifying(clearAutomatically = true)
     void updateFrequency(@Param("lemma") String name, @Param("site") Site site);
 
-    List<Lemma> findByLemmaOrderByFrequencyAsc(String text);
+    List<Lemma> findByLemma(String text);
 
     List<Lemma> findBySite(Site site);
 

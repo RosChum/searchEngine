@@ -18,7 +18,7 @@ public interface IndexingService {
 
     void indexPage(String url, Site site);
 
-    ResultSearch searchPage(String query, String site, Pageable pageable);
+    ResultSearch searchPage(String query, String site, int limit, int offset);
 
     Site getSiteFromDB(String url);
 }

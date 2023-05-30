@@ -3,7 +3,6 @@ package searchengine.services;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
 import searchengine.dto.searchModel.DtoSearchPageInfo;
@@ -124,7 +123,7 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     @Override
-    public ResultSearch searchPage(String query, String site, Pageable pageable) {
+    public ResultSearch searchPage(String query, String site, int limit, int offset) {
         ResultSearch resultSearch = new ResultSearch();
         List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
         Set<Page> foundListPageByFirstLemma;
@@ -133,7 +132,7 @@ public class IndexingServiceImpl implements IndexingService {
             Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
             for (String lemmas : queryLemmas) {
                 if (site == null || site.isEmpty()) {
-                    foundLemmaListFromQuery.addAll(lemmaRepository.findByLemmaOrderByFrequencyAsc(lemmas)); // находим все леммы из запроса
+                    foundLemmaListFromQuery.addAll(lemmaRepository.findByLemma(lemmas)); // находим все леммы из запроса
                 } else {
                     Site site1 = siteRepository.findByUrl(site);
                     foundLemmaListFromQuery.addAll(lemmaRepository.findLemmasByLemmaAndSite(lemmas, site1));// находим все леммы из запроса на сайте
@@ -149,8 +148,7 @@ public class IndexingServiceImpl implements IndexingService {
                         .filter(f -> f.getLemma().getLemma().equals(sortedFoundLemmaListFromQuery.get(0).getLemma()))
                         .map(f -> f.getPage())).collect(Collectors.toSet()); //находим все страницы по первой лемме, получаем страницы
 
-                resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery);
-                resultSearch.setPageable(pageable);
+                resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery,limit,offset);
 
             } else {
                 resultSearch.setResult(false);
@@ -183,7 +181,7 @@ public class IndexingServiceImpl implements IndexingService {
         forkJoinPool.shutdown();
     }
 
-    private ResultSearch searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery) {
+    private ResultSearch searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery,int limit, int offset) {
         Set<String> getLemmasStringType = new HashSet<>();
         Set<Page> workingListPage = new HashSet<>(Set.copyOf(foundListPageByFirstLemma));
         getLemmasStringType.addAll(sortedFoundLemmaListFromQuery.stream().map(Lemma::getLemma).collect(Collectors.toSet()));
@@ -195,11 +193,11 @@ public class IndexingServiceImpl implements IndexingService {
             }
 
         }
-        return getResultSearch(workingListPage, getLemmasStringType);
+        return getResultSearch(workingListPage, getLemmasStringType, limit, offset);
 
     }
 
-    private ResultSearch getResultSearch(Set<Page> pageSet, Set<String> lemmasListFromQuery) {
+    private ResultSearch getResultSearch(Set<Page> pageSet, Set<String> lemmasListFromQuery, int limit, int offset) {
 
         ResultSearch resultSearch = new ResultSearch();
         Set<DtoSearchPageInfo> findPage = new HashSet<>();
@@ -225,7 +223,7 @@ public class IndexingServiceImpl implements IndexingService {
 
         resultSearch.setResult(true);
         resultSearch.setCount(findPage.size());
-        resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).collect(Collectors.toList()));
+        resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).skip(offset).limit(limit).collect(Collectors.toList()));
 
         return resultSearch;
     }
@@ -303,6 +301,5 @@ public class IndexingServiceImpl implements IndexingService {
     private String bringingWebsiteAddressToSingleFormat(String url) {
         return url.replace("www", "");
     }
-
 
 }

@@ -2,11 +2,8 @@ package searchengine.controllers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +13,8 @@ import searchengine.dto.searchModel.ResultSearch;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
+
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -98,7 +97,7 @@ public class ApiController {
             return ResponseEntity.ok(statusRequest);
         }
 
-        ResultSearch resultSearch = indexingService.searchPage(query, site, pageable);
+        ResultSearch resultSearch = indexingService.searchPage(query, site, limit, offset);
         if (!resultSearch.isResult()) {
             statusRequest.setResult(false);
             statusRequest.setError("Указанная страница не найдена");
