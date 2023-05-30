@@ -2,19 +2,18 @@ package searchengine.controllers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import searchengine.config.SitesList;
 import searchengine.dto.StatusRequest;
 import searchengine.dto.searchModel.ResultSearch;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
-
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -83,26 +82,23 @@ public class ApiController {
     }
 
     @GetMapping(value = "/search")
-
     public ResponseEntity<?> search(@RequestParam(name = "query") String query, @RequestParam(name = "offset") Integer offset,
                                     @RequestParam(name = "limit") Integer limit, @RequestParam(required = false, name = ("site")) String site) {
 
-        Pageable pageable = PageRequest.of(10, 10);
+            StatusRequest statusRequest = new StatusRequest();
 
-        StatusRequest statusRequest = new StatusRequest();
+            if (query.isEmpty() || query.equals("\s")) {
+                statusRequest.setResult(false);
+                statusRequest.setError("Задан пустой поисковый запрос");
+                return ResponseEntity.ok(statusRequest);
+            }
 
-        if (query.isEmpty() || query.equals("\s")) {
-            statusRequest.setResult(false);
-            statusRequest.setError("Задан пустой поисковый запрос");
-            return ResponseEntity.ok(statusRequest);
-        }
-
-        ResultSearch resultSearch = indexingService.searchPage(query, site, limit, offset);
-        if (!resultSearch.isResult()) {
-            statusRequest.setResult(false);
-            statusRequest.setError("Указанная страница не найдена");
-            return ResponseEntity.status(404).body(statusRequest);
-        }
+            ResultSearch resultSearch = indexingService.searchPage(query, site, limit, offset);
+            if (!resultSearch.isResult()) {
+                statusRequest.setResult(false);
+                statusRequest.setError("Указанная страница не найдена");
+                return ResponseEntity.status(404).body(statusRequest);
+            }
 
         return ResponseEntity.ok(resultSearch);
     }

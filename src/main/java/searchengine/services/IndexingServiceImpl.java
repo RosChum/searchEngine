@@ -160,7 +160,6 @@ public class IndexingServiceImpl implements IndexingService {
 
         }
 
-
         return resultSearch;
 
     }
@@ -219,12 +218,11 @@ public class IndexingServiceImpl implements IndexingService {
             findPage.add(dtoSearchPageInfo);
 
         }
-        getRelativeRelevance(findPage);
 
-        resultSearch.setResult(true);
+        getRelativeRelevance(findPage);
         resultSearch.setCount(findPage.size());
         resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).skip(offset).limit(limit).collect(Collectors.toList()));
-
+        resultSearch.setResult(resultSearch.getData().size() > 0);
         return resultSearch;
     }
 
@@ -299,7 +297,7 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     private String bringingWebsiteAddressToSingleFormat(String url) {
-        return url.replace("www", "");
+        return url.replace("www.", "");
     }
 
 }

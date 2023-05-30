@@ -56,7 +56,12 @@ public class SiteIndexing extends RecursiveTask<Site> {
 
             Thread.sleep(250);
 
-            Document document = Jsoup.connect(url).ignoreHttpErrors(true).get();
+            Document document = Jsoup.connect(url).ignoreHttpErrors(false).get();
+            Connection.Response responseCode = document.connection().response();
+            if (responseCode.statusCode() == 400 || responseCode.statusCode() ==  401|| responseCode.statusCode() ==  403
+                    || responseCode.statusCode() ==  404||responseCode.statusCode() ==  405 || responseCode.statusCode() == 500){
+                throw new IOException();
+            }
 
             Elements elements = document.select("a[href]");
 
@@ -64,8 +69,6 @@ public class SiteIndexing extends RecursiveTask<Site> {
                 childUrl = element.absUrl("href");
 
                 if (checkURL(childUrl, site)) {
-
-                    Connection.Response responseCode = document.connection().response();
 
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
 
@@ -76,6 +79,7 @@ public class SiteIndexing extends RecursiveTask<Site> {
                     if (responseCode.statusCode() == 200) {
                         addLemmaDB(document.text(), site);
                     }
+
 
                     SiteIndexing siteIndexMap = new SiteIndexing(childUrl, siteRepository, pageRepository, site,
                             lemmaRepository, indexSearchRepository);
@@ -95,15 +99,15 @@ public class SiteIndexing extends RecursiveTask<Site> {
 
 
         } catch (HttpStatusException ex) {
-            log.error(ex.toString());
+            log.error("HTTP status page - " + ex.toString());
             addPageInDb(url, ex.getStatusCode(), ex.getMessage(), site);
 
         } catch (IOException | InterruptedException exception) {
-            log.error(exception.toString());
+            log.error("Site parsing error - " + exception.toString());
             site.setStatus(IndexingStatus.FAILED);
-            site.setLastError(exception.toString());
+            site.setLastError("Ошибка индексации: сайт не доступен");
             site.setStatusTime(LocalDateTime.now());
-            siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, exception.toString(), LocalDateTime.now());
+            siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Ошибка индексации: сайт не доступен", LocalDateTime.now());
             return site;
 
         }
@@ -128,7 +132,7 @@ public class SiteIndexing extends RecursiveTask<Site> {
     }
 
     private boolean checkURL(String url, Site site) {
-        return url.startsWith(this.url) && url.endsWith("/") &&
+        return url.startsWith(this.url) && (url.endsWith("/") || url.endsWith("html")) &&
                 !pageRepository.existsByPath(url.substring(site.getUrl().length()));
     }
 
