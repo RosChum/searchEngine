@@ -1,19 +1,24 @@
 package searchengine.controllers;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.HttpStatusException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
+import org.springframework.boot.context.properties.bind.BindException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
 import searchengine.config.SitesList;
 import searchengine.dto.StatusRequest;
 import searchengine.dto.searchModel.ResultSearch;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api")
@@ -96,12 +101,21 @@ public class ApiController {
             ResultSearch resultSearch = indexingService.searchPage(query, site, limit, offset);
             if (!resultSearch.isResult()) {
                 statusRequest.setResult(false);
-                statusRequest.setError("Указанная страница не найдена");
-                return ResponseEntity.status(404).body(statusRequest);
+                statusRequest.setError("По указанному запросы страницы не найдены");
+                return ResponseEntity.ok(statusRequest);
             }
 
         return ResponseEntity.ok(resultSearch);
     }
 
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<StatusRequest> exception(Exception exception){
+//        StatusRequest statusRequest = new StatusRequest();
+//        statusRequest.setResult(false);
+//        statusRequest.setError("Указанная страница не найдена");
+//        log.error(Arrays.toString(exception.getStackTrace()));
+//
+//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(statusRequest);
+//    }
 
 }
