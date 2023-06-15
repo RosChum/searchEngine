@@ -78,8 +78,8 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public void stopIndexing() {
         if (statusIndexing()) {
-            threadPoolExecutor.shutdownNow();
-            SiteIndexing.stop = true;
+            threadPoolExecutor.shutdown();
+            SiteIndexing.stopParsing = true;
             ForkJoinPool.commonPool().shutdownNow();
 
         }
@@ -167,14 +167,14 @@ public class IndexingServiceImpl implements IndexingService {
 
     private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site,
                                   LemmaRepository lemmaRepository, IndexRepository indexSearchRepository) {
-        SiteIndexing.stop = false;
+        SiteIndexing.stopParsing = false;
         SiteIndexing siteIndexMap = new SiteIndexing(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
         forkJoinPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
         Site site1 = forkJoinPool.invoke(siteIndexMap);
         if (site1.getStatus() != IndexingStatus.FAILED) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());
         }
-        if (site1.getStatus() != IndexingStatus.FAILED && site1.getStatus() != IndexingStatus.INDEXED && SiteIndexing.stop) {
+        if (site1.getStatus() != IndexingStatus.FAILED && site1.getStatus() != IndexingStatus.INDEXED && SiteIndexing.stopParsing) {
             siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
         }
         forkJoinPool.shutdown();
@@ -219,7 +219,7 @@ public class IndexingServiceImpl implements IndexingService {
 
         }
 
-        getRelativeRelevance(findPage);
+        setRelativeRelevance(findPage);
         resultSearch.setCount(findPage.size());
         resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).skip(offset).limit(limit).collect(Collectors.toList()));
         resultSearch.setResult(resultSearch.getData().size() > 0);
@@ -267,7 +267,7 @@ public class IndexingServiceImpl implements IndexingService {
         return document.select("title").text() + "\n" + document.select("h2").text();
     }
 
-    private void getRelativeRelevance(Set<DtoSearchPageInfo> findPage) {
+    private void setRelativeRelevance(Set<DtoSearchPageInfo> findPage) {
 
         List<DtoSearchPageInfo> workList = findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance)).collect(Collectors.toList());
 

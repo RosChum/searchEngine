@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.RecursiveTask;
 
 @Slf4j
@@ -35,7 +34,7 @@ public class SiteIndexing extends RecursiveTask<Site> {
     private Lemma lemma;
     private LemmaСonverter lemmaСonverter = new LemmaСonverter();
     private Index indexSearch;
-    public static boolean stop;
+    public static boolean stopParsing;
     private HashMap<String, Integer> lemmas;
 
 
@@ -53,50 +52,33 @@ public class SiteIndexing extends RecursiveTask<Site> {
     protected Site compute() {
 
         try {
-
             Thread.sleep(250);
-
             Document document = Jsoup.connect(url).ignoreHttpErrors(false).get();
             Connection.Response responseCode = document.connection().response();
-            if (responseCode.statusCode() == 400 || responseCode.statusCode() ==  401|| responseCode.statusCode() ==  403
-                    || responseCode.statusCode() ==  404||responseCode.statusCode() ==  405 || responseCode.statusCode() == 500){
-                throw new IOException();
-            }
-
             Elements elements = document.select("a[href]");
-
             elements.forEach(element -> {
                 childUrl = element.absUrl("href");
-
                 if (checkURL(childUrl, site)) {
-
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
-
-                    synchronized (SiteIndexing.class) {
-                        siteRepository.updateStatusTime(site.getName(), LocalDateTime.now());
-                    }
+                    updateStatusTimeToSite(site.getName());
 
                     if (responseCode.statusCode() == 200) {
                         addLemmaDB(document.text(), site);
                     }
 
-
                     SiteIndexing siteIndexMap = new SiteIndexing(childUrl, siteRepository, pageRepository, site,
                             lemmaRepository, indexSearchRepository);
 
-                    if (stop) {
+                    if (stopParsing) {
                         task.clear();
                         return;
-
 //                        ForkJoinWorkerThread.currentThread().interrupt();
                     } else {
                         siteIndexMap.fork();
                         task.add(siteIndexMap);
                     }
                 }
-
             });
-
 
         } catch (HttpStatusException ex) {
             log.error("HTTP status page - " + ex.toString());
@@ -138,38 +120,30 @@ public class SiteIndexing extends RecursiveTask<Site> {
 
     private synchronized void addLemmaDB(String text, Site site) {
 
-
-        if (!stop) {
+        if (!stopParsing) {
             try {
-
                 lemmas = lemmaСonverter.convertTextToLemmas(text);
                 lemmas.forEach((keyLemma, value) -> {
                     lemma = new Lemma();
                     lemma.setLemma(keyLemma);
                     lemma.setSite(site);
                     lemma.setFrequency(1);
-
                     if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
-                        synchronized (LemmaRepository.class) {
-                            lemmaRepository.updateFrequency(keyLemma, site);
-                        }
+                        lemmaRepository.updateFrequency(keyLemma, site);
                         lemma = lemmaRepository.findByLemmaAndSite(keyLemma, site);
                         addIndexDB(lemma, page, value);
-
                     } else {
                         lemmaRepository.save(lemma);
                         addIndexDB(lemma, page, value);
+
                     }
 
                 });
-
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Add lemma error: " + e.toString());
             }
-
         } else {
             lemmas.clear();
-            ForkJoinWorkerThread.currentThread().interrupt();
         }
 
     }
@@ -180,6 +154,10 @@ public class SiteIndexing extends RecursiveTask<Site> {
         indexSearch.setPage(page);
         indexSearch.setRank(value);
         indexSearchRepository.save(indexSearch);
+    }
+
+    private synchronized void updateStatusTimeToSite(String siteName) {
+        siteRepository.updateStatusTime(siteName, LocalDateTime.now());
     }
 
 

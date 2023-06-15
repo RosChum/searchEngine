@@ -43,6 +43,7 @@ public class ApiController {
 
     @GetMapping(value = "/startIndexing", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StatusRequest> startIndexing() {
+
         StatusRequest statusRequest = new StatusRequest();
         if (indexingService.statusIndexing()) {
             statusRequest.setResult(false);
@@ -73,6 +74,11 @@ public class ApiController {
     @PostMapping(value = "/indexPage", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<StatusRequest> indexPage(@RequestParam String url) {
         StatusRequest statusRequest = new StatusRequest();
+        if (url.isBlank()) {
+            statusRequest.setResult(false);
+            statusRequest.setError("Задан пустой запрос на обновление/добавление");
+            return ResponseEntity.ok(statusRequest);
+        }
         if (indexingService.getSiteFromDB(url) != null) {
             indexingService.indexPage(url, indexingService.getSiteFromDB(url));
             statusRequest.setResult(true);
