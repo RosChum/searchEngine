@@ -58,7 +58,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         response.setResult(true);
         return response;
     }
-    //TODO Check method on error statistic
+
     private DetailedStatisticsItem getDetailedStatisticsItem(Site site,int pagesCount, int lemmasCount ){
         DetailedStatisticsItem item = new DetailedStatisticsItem();
         item.setName(site.getName());

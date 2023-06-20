@@ -9,8 +9,8 @@ public class DetailedStatisticsItem {
     private String name;
     private String status;
     private long statusTime;
-    //TODO Убрать вывод пользователю null, но так не убирает, а ставит значение undefined
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    //TODO Убрать вывод пользователю null, но так не убирает, а ставит значение undefined, как и изменение конфигурации :(
+//    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String error;
     private int pages;
     private int lemmas;

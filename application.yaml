@@ -11,6 +11,11 @@ spring:
       user-agent: Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6
       default-headers:
         Referer: http://www.google.com
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
   jpa:
     properties:
       hibernate:
@@ -34,14 +39,14 @@ indexing-settings:
 #      name: lutherancathedral
 #    - url: https://ipfran.ru
 #      name: ipfran.ru
-#    - url: https://dombulgakova.ru
-#      name: dombulgakova
-#    - url: https://www.nikoartgallery.com
-#      name: nikoartgallery.com
+    - url: https://dombulgakova.ru
+      name: dombulgakova
+    - url: https://www.nikoartgallery.com
+      name: nikoartgallery.com
 #    - url: https://volochek.life
 #      name: volochek
-#    - url: https://dimonvideo.ru
-#      name: dimonvideo
+    - url: https://dimonvideo.ru
+      name: dimonvideo
     - url: https://et-cetera.ru
       name: ceteram
 
