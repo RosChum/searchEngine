@@ -17,8 +17,8 @@ import java.util.List;
 @EnableWebMvc
 @ComponentScan("searchengine.controllers")
 public class MvcConfig implements WebMvcConfigurer {
-    @Override
 
+    @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new RequestResponseLoggerInterceptor());
     }
