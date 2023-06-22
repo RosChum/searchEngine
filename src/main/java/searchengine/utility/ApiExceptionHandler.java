@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -21,6 +20,7 @@ import java.util.Arrays;
 @Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+//todo наверное лучше создать свой класс для ошибок, а не использовать StatusRequest
 
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
@@ -36,17 +36,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     }
 
-    @Override
-    protected ResponseEntity<Object> handleServletRequestBindingException(ServletRequestBindingException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
-        ModelAndView modelAndView = new ModelAndView(new MappingJackson2JsonView());
-        StatusRequest statusRequest = new StatusRequest();
-        statusRequest.setResult(false);
-        statusRequest.setError("Указанная страница не найдена");
-        modelAndView.setStatus(status);
-        modelAndView.addObject(statusRequest);
-        log.error("Request error :" + Arrays.toString(ex.getStackTrace()));
-        return new ResponseEntity<>(modelAndView.getModelMap(), status);
-    }
 
     @Override
     protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
@@ -56,6 +45,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         statusRequest.setError("Указанная страница не найдена");
         modelAndView.setStatus(status);
         modelAndView.addObject(statusRequest);
+        log.error("Request error :" + Arrays.toString(ex.getStackTrace()));
         return new ResponseEntity<>(modelAndView.getModelMap(), status);
     }
 
