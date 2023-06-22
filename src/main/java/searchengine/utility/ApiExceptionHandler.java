@@ -31,7 +31,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         modelAndView.setStatus(status);
         modelAndView.addObject(statusRequest);
 
-        log.error("Request error :" + Arrays.toString(ex.getStackTrace()));
+        log.error("Request error :" + Arrays.toString(ex.getStackTrace()) + "\n" + ex.toString());
         return new ResponseEntity<>(modelAndView.getModelMap(), status);
 
     }
