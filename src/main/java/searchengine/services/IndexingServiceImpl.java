@@ -148,7 +148,7 @@ public class IndexingServiceImpl implements IndexingService {
                         .filter(f -> f.getLemma().getLemma().equals(sortedFoundLemmaListFromQuery.get(0).getLemma()))
                         .map(f -> f.getPage())).collect(Collectors.toSet()); //находим все страницы по первой лемме, получаем страницы
 
-                resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery,limit,offset);
+                resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery, limit, offset);
 
             } else {
                 resultSearch.setResult(false);
@@ -180,7 +180,7 @@ public class IndexingServiceImpl implements IndexingService {
         forkJoinPool.shutdown();
     }
 
-    private ResultSearch searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery,int limit, int offset) {
+    private ResultSearch searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery, int limit, int offset) {
         Set<String> getLemmasStringType = new HashSet<>();
         Set<Page> workingListPage = new HashSet<>(Set.copyOf(foundListPageByFirstLemma));
         getLemmasStringType.addAll(sortedFoundLemmaListFromQuery.stream().map(Lemma::getLemma).collect(Collectors.toSet()));
@@ -249,12 +249,14 @@ public class IndexingServiceImpl implements IndexingService {
                 Document document = Jsoup.parse(p.getPage().getContent());
 //                String regexSnippet = "(?<=[.!?]\\s).{0,100}\\b" + p.getLemma().getLemma() + "\\b.{0,100}[.!?]";
                 String regexSnippet = ".{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}";
+//                String regexSnippet = p.getLemma().getLemma();
 
                 Pattern pattern = Pattern.compile(regexSnippet);
                 Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
 
                 while (matcher.find()) {
                     String substring = matcher.group();
+
                     snippet.append(substring.replaceAll(p.getLemma().getLemma(), "<b>" + p.getLemma().getLemma() + "</b>"));
                 }
             }
