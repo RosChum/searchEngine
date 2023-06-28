@@ -20,7 +20,7 @@
 ### Пример работы<a name="Example"></a>
 На стартовой странице отображается перечень сайтов, статус индексации, статистика индексации.
 
-![Стартовая страница]([#/main/start screen.png](http://webdesign.ru.net/images/Heydon_min.jpg))
+![start screen.png](https://github.com/RosChum/searchEngine/blob/main/start%20screen.png)
 
 
 
