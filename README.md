@@ -32,6 +32,10 @@
 ![Serch](AssetsForReadMe/Search.png)
 ***
 ### Запуск приложения<a name="Setup"></a>
+Jar архив запускается через коммандную строку 
+```
+java -jar SearchEngine-1.0-SNAPSHOT.jar
+```
 
 
 ***
