@@ -20,10 +20,16 @@
 ### Пример работы<a name="Example"></a>
 На стартовой странице отображается перечень сайтов, статус индексации, статистика индексации.
 
-![start screen.png](https://github.com/RosChum/searchEngine/blob/main/start%20screen.png)
+![start screen.png](/AssetsForReadMe/start%20screen.png)
 
+Во вкладке **Management** предусмотрено две кнопки:<br>
+**START INDEXING**- запуск индексации сайтов, размещенных в application.yaml<br>
+**ADD/UPDATE** - добовляет / обновляет страницу сайта из перечня сайтов, размещенных в application.yaml
+![Management](/AssetsForReadMe/Management.png)
 
+Во вкладке **Serch** осуществляется непосредственно поиск. Имеется выпадающий список для возможности осуществления поиска на определенном сайте. 
 
+![Serch](AssetsForReadMe/Search.png)
 ***
 ### Запуск приложения<a name="Setup"></a>
 
