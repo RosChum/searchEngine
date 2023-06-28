@@ -6,9 +6,9 @@
  3. [Запуск приложения](#Setup)
  4. [Документация](#Documentation)
     1. [Используемый стек технологий](#Steck)
-    2. [Описание структуры приложения](#Application structure)
-    3. [Подробное описание работы пакетов](#Description Package)
- 5. [Дополнительная информация](#Additional information)
+    2. [Описание структуры приложения](#Application-structure)
+    3. [Подробное описание работы пакетов](#Description-Package)
+ 5. [Дополнительная информация](#Additional-information)
 ***
 
 ### Краткое описание проекта<a name="Description"></a>
@@ -20,8 +20,20 @@
 ### Пример работы<a name="Example"></a>
 На стартовой странице отображается перечень сайтов, статус индексации, статистика индексации.
 
-![Стартовая страница](#.\serchEngine\start screen.png)
+![Стартовая страница](\main\start screen.png)
 
 
 
 ***
+### Запуск приложения<a name="Setup"></a>
+
+
+***
+### Документация <a name="Documentation"></a>
+#### Используемый стек технологий <a name="Steck"></a>
+
+***
+#### Описание структуры приложения <a name="Application-structure"></a>
+
+***
+#### Подробное описание работы пакетов <a name="Description-Package"></a>
