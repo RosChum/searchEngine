@@ -70,39 +70,66 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
 
 ````
 +- searchEngine
-   +- src
-   |   +- main
-   |      +- java
-   |      |   +- searchengine
-   |      |       +- config
-   |      |       |   +- MvcConfig.java
-   |      |       |   +- Site.java
-   |      |       |   +- SitesList.java
-   |      |       +- controllers
-   |      |       |   +- ApiController.java
-   |      |       |   +- DefaultController.java
-   |      |       +- dto
-   |      |       |   +- searchModel
-   |      |       |   |   +- DtoSearchPageInfo.java
-   |      |       |   |   +- ResultSearch.java
-   |      |       |   +- statistics
-   |      |       |   |   +- DetailedStatisticsItem.java
-   |      |       |   |   +- StatisticsData.java
-   |      |       |   |   +- StatisticsResponse.java
-   |      |       |   |   +- TotalStatistics.java
-   |      |       |   +- StatusRequest.java
-   |      |       +- model
-   |      +- resources
-   |              +- repository
-   |              +- services
-   |              +- utility
-   +- AssetsForReadMe
-   |
-   +- README.md
-   +- application.yaml
-   +- pom.xml
+  +- src
+  |      +- main
+  |      |     +- java
+  |      |       +- searchengine
+  |      |         +- config
+  |      |         |   +- MvcConfig.java
+  |      |         |   +- Site.java
+  |      |         |   +- SitesList.java
+  |      |         +- controllers
+  |      |         |   +- ApiController.java
+  |      |         |   +- DefaultController.java
+  |      |         +- dto
+  |      |         |   +- searchModel
+  |      |         |   |   +- DtoSearchPageInfo.java
+  |      |         |   |   +- ResultSearch.java
+  |      |         |   +- statistics
+  |      |         |   |   +- DetailedStatisticsItem.java
+  |      |         |   |   +- StatisticsData.java
+  |      |         |   |   +- StatisticsResponse.java
+  |      |         |   |   +- TotalStatistics.java
+  |      |         |   +- StatusRequest.java
+  |      |         +- model
+  |      |         |   +- Index.java
+  |      |         |   +- IndexingStatus.java
+  |      |         |   +- Lemma.java
+  |      |         |   +- Page.java
+  |      |         |   +- Site.java
+  |      |         +- repository
+  |      |         |   +- IndexRepository.java
+  |      |         |   +- LemmaRepository.java
+  |      |         |   +- PageRepository.java
+  |      |         |   +- SiteRepository.java
+  |      |         +- services
+  |      |         |   +- IndexingService.java
+  |      |         |   +- IndexingServiceImpl.java
+  |      |         |   +- StatisticsService.java
+  |      |         |   +- StatisticsServiceImpl.java
+  |      |         +- utility
+  |      |         |   +- ApiExceptionHandler.java
+  |      |         |   +- LemmaСonverter.java
+  |      |         |   +- RequestResponseLoggerInterceptor.java
+  |      |         |   +- SiteIndexing.java
+  |      |         +- Application.java
+  |      |         +- CommandLineRunnerImpl.java
+  |      +- resources
+  |          +- static/assets
+  |          |   +- css
+  |          |   +- fonts/Montserrat
+  |          |   +- img/icons
+  |          |   +- js
+  |          |   +- plg
+  |          +- templates
+  |          |   +- index.html
+  |          +- application.yaml
+  |          +- logback-spring.xml
+  +- AssetsForReadMe
+  +- README.md
+  +- application.yaml
+  +- pom.xml
 ````
-
 </details>
 
 
