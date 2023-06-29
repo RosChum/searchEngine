@@ -46,18 +46,73 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
  
 ### Документация
 <a name="Steck"></a>
-
 </summary>
 
+<details>
+<summary>
+ 
 #### Используемый стек технологий
+</summary>
+- Java 17<br>
+- Spring Boot (v2.7.1)<br>
+- Spring MVC<br>
+- Spring Data<br>
+- Lombok<br>
+- MySql<br>
+- Jsoup<br>
+- Maven<br>
+</details>
+<details>
+<summary>
+ 
+#### Описание структуры приложения
+</summary>
+
+````
++- searchEngine
+   +- src
+   |   +- main
+   |      +- java
+   |      |   +- searchengine
+   |      |       +- config
+   |      |       |   +- MvcConfig.java
+   |      |       |   +- Site.java
+   |      |       |   +- SitesList.java
+   |      |       +- controllers
+   |      |       |   +- ApiController.java
+   |      |       |   +- DefaultController.java
+   |      |       +- dto
+   |      |       |   +- searchModel
+   |      |       |   |   +- DtoSearchPageInfo.java
+   |      |       |   |   +- ResultSearch.java
+   |      |       |   +- statistics
+   |      |       |   |   +- DetailedStatisticsItem.java
+   |      |       |   |   +- StatisticsData.java
+   |      |       |   |   +- StatisticsResponse.java
+   |      |       |   |   +- TotalStatistics.java
+   |      |       |   +- StatusRequest.java
+   |      |       +- model
+   |      +- resources
+   |              +- repository
+   |              +- services
+   |              +- utility
+   +- AssetsForReadMe
+   |
+   +- README.md
+   +- application.yaml
+   +- pom.xml
+````
+
 </details>
 
 
 
 
 
-***
-#### Описание структуры приложения <a name="Application-structure"></a>
+</details>
+
+
+
 
 ***
-#### Подробное описание работы пакетов <a name="Description-Package"></a>
+#### Подробное описание работы пакетов 
