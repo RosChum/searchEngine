@@ -13,14 +13,13 @@ import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 import searchengine.utility.LemmaСonverter;
+import searchengine.utility.FindMatchesSnippets;
 import searchengine.utility.SiteIndexing;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -129,9 +128,13 @@ public class IndexingServiceImpl implements IndexingService {
         Set<Page> foundListPageByFirstLemma;
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
         try {
+
             Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
+
             for (String lemmas : queryLemmas) {
+
                 if (site == null || site.isEmpty()) {
+
                     foundLemmaListFromQuery.addAll(lemmaRepository.findByLemma(lemmas)); // находим все леммы из запроса
                 } else {
                     Site site1 = siteRepository.findByUrl(site);
@@ -156,8 +159,8 @@ public class IndexingServiceImpl implements IndexingService {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
-
+            //todo перехватывает в ApiExceptionHandler
+            throw new RuntimeException();
         }
 
         return resultSearch;
@@ -203,7 +206,7 @@ public class IndexingServiceImpl implements IndexingService {
 
         for (Page page : pageSet) {
 
-            List<Index> indexSearches = page.getIndexSearches();
+            Set<Index> indexSearches = page.getIndexSearches().stream().collect(Collectors.toSet());
 
             Document document = Jsoup.parse(page.getContent());
 
@@ -226,7 +229,7 @@ public class IndexingServiceImpl implements IndexingService {
         return resultSearch;
     }
 
-    private double getAbsoluteRelevance(List<Index> indexSearches, Set<String> lemmasListFromQuery) {
+    private double getAbsoluteRelevance(Set<Index> indexSearches, Set<String> lemmasListFromQuery) {
 
         AtomicInteger absoluteRelevance = new AtomicInteger();
 
@@ -240,28 +243,22 @@ public class IndexingServiceImpl implements IndexingService {
         return absoluteRelevance.doubleValue();
     }
 
-    private String getSnippet(List<Index> indexSearches, Set<String> lemmasListFromQuery) {
-
+    private String getSnippet(Set<Index> indexSearches, Set<String> lemmasListFromQuery) {
+        ThreadPoolExecutor threadPoolExecutorForSnippet = (ThreadPoolExecutor) Executors.newFixedThreadPool(12);
         StringBuilder snippet = new StringBuilder();
         indexSearches.forEach(p -> {
 
             if (lemmasListFromQuery.contains(p.getLemma().getLemma())) {
-                Document document = Jsoup.parse(p.getPage().getContent());
-//                String regexSnippet = "(?<=[.!?]\\s).{0,100}\\b" + p.getLemma().getLemma() + "\\b.{0,100}[.!?]";
-                String regexSnippet = ".{0,30}\\b" + p.getLemma().getLemma() + "\\b.{0,30}";
-//                String regexSnippet = p.getLemma().getLemma();
 
-                Pattern pattern = Pattern.compile(regexSnippet);
-                Matcher matcher = pattern.matcher(document.text().toLowerCase(Locale.ROOT));
-
-                while (matcher.find()) {
-                    String substring = matcher.group();
-
-                    snippet.append(substring.replaceAll(p.getLemma().getLemma(), "<b>" + p.getLemma().getLemma() + "</b>"));
+                try {
+                    snippet.append(threadPoolExecutorForSnippet.submit(() -> new FindMatchesSnippets(p.getLemma().getLemma(), p.getPage().getContent()).call()).get());
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
                 }
             }
-        });
 
+        });
+        threadPoolExecutorForSnippet.shutdown();
         return snippet.toString();
     }
 

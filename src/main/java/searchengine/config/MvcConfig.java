@@ -23,11 +23,12 @@ public class MvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(new RequestResponseLoggerInterceptor());
     }
 
-    @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter(objectMapper);
-        converters.add(jsonConverter);
-    }
+    // Если значение null, то оно не присваивается, можно использовать аннотацию @JsonInclude(JsonInclude.Include.NON_NULL) к определенной переменной
+//    @Override
+//    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+//        MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter(objectMapper);
+//        converters.add(jsonConverter);
+//    }
 }

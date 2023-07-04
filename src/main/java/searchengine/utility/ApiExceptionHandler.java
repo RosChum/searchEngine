@@ -20,7 +20,10 @@ import java.util.Arrays;
 @Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
-//todo наверное лучше создать свой класс для ошибок, а не использовать StatusRequest
+
+    //todo наверное лучше создать свой класс для ошибок, а не использовать StatusRequest
+
+    StringBuilder exceptionInfo = new StringBuilder();
 
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
@@ -30,8 +33,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         statusRequest.setError("Указанная страница не найдена");
         modelAndView.setStatus(status);
         modelAndView.addObject(statusRequest);
-
-        log.error("Request error :" + Arrays.toString(ex.getStackTrace()) + "\n" + ex.toString());
+        writeToLog(ex);
         return new ResponseEntity<>(modelAndView.getModelMap(), status);
 
     }
@@ -45,7 +47,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         statusRequest.setError("Указанная страница не найдена");
         modelAndView.setStatus(status);
         modelAndView.addObject(statusRequest);
-        log.error("Request error :" + Arrays.toString(ex.getStackTrace()));
+        writeToLog(ex);
         return new ResponseEntity<>(modelAndView.getModelMap(), status);
     }
 
@@ -57,7 +59,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         statusRequest.setError("Указанная страница не найдена");
         modelAndView.setStatus(status);
         modelAndView.addObject(statusRequest);
-        log.error("Request error :" + Arrays.toString(ex.getStackTrace()));
+
         return new ResponseEntity<>(modelAndView.getModelMap(), status);
     }
 
@@ -66,7 +68,20 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         StatusRequest statusRequest = new StatusRequest();
         statusRequest.setResult(false);
         statusRequest.setError("Указанная страница не найдена");
+        writeToLog(ex);
         return new ResponseEntity<>(statusRequest, HttpStatus.INTERNAL_SERVER_ERROR);
+
+    }
+
+    private void writeToLog(Exception exception) {
+        Arrays.stream(exception.getStackTrace()).forEach(element -> exceptionInfo.append(element).append("\n"));
+        if (exception instanceof MissingServletRequestParameterException
+                || exception instanceof HttpRequestMethodNotSupportedException
+                || exception instanceof NoHandlerFoundException) {
+            log.error("Request error :" + exceptionInfo);
+        } else {
+            log.error("Exception :" + exceptionInfo);
+        }
 
     }
 
