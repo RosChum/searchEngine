@@ -121,7 +121,7 @@ public class SiteIndexing extends RecursiveTask<Site> {
     private synchronized void addLemmaDB(String text, Site site) {
 
         if (!stopParsing) {
-            try {
+
                 lemmas = lemmaСonverter.convertTextToLemmas(text);
                 lemmas.forEach((keyLemma, value) -> {
                     lemma = new Lemma();
@@ -139,9 +139,7 @@ public class SiteIndexing extends RecursiveTask<Site> {
                     }
 
                 });
-            } catch (IOException e) {
-                log.error("Add lemma error: " + e.toString());
-            }
+
         } else {
             lemmas.clear();
         }

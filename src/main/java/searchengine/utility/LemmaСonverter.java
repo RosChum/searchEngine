@@ -1,26 +1,31 @@
 package searchengine.utility;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+@Slf4j
 public class LemmaСonverter {
 
 
     private HashMap<String, Integer> result;
 
 
-    public HashMap<String, Integer> convertTextToLemmas(String text) throws IOException {
+    public HashMap<String, Integer> convertTextToLemmas(String text) {
 
         result = new HashMap<>();
+        LuceneMorphology luceneMorph = null;
+        try {
+            luceneMorph = new RussianLuceneMorphology();
+        } catch (IOException ex) {
+            log.error(ex.getMessage(), ex);
+        }
 
-        LuceneMorphology luceneMorph = new RussianLuceneMorphology();
 
         String[] splitText = text.toLowerCase(Locale.ROOT).replaceAll("[^А-Яа-яЁё\\s]", "")
                 .split("\\s");
@@ -32,8 +37,10 @@ public class LemmaСonverter {
             wordBaseForms.stream().filter(word -> !word.matches(".*ЧАСТ.*|.*МЕЖД.*|.*ПРЕДЛ.*|.*СОЮЗ.*"))
                     .map(word -> word.substring(0, word.lastIndexOf('|'))).forEach(word -> {
                         if (!result.containsKey(word)) {
-                            result.put(word,1);
-                        } else {result.put(word,result.get(word)+1);}
+                            result.put(word, 1);
+                        } else {
+                            result.put(word, result.get(word) + 1);
+                        }
 
                     });
 
@@ -42,10 +49,4 @@ public class LemmaСonverter {
         return result;
     }
 
-    public String clearingPageTags(String text) {
-
-        Document document = Jsoup.parse(text);
-
-        return document.text();
-    }
 }

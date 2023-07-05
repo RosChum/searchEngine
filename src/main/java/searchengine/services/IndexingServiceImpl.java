@@ -12,14 +12,16 @@ import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.utility.LemmaСonverter;
 import searchengine.utility.FindMatchesSnippets;
+import searchengine.utility.LemmaСonverter;
 import searchengine.utility.SiteIndexing;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -103,7 +105,7 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public void indexPage(String url, Site site) {
         String urlSite = bringingWebsiteAddressToSingleFormat(url);
-        Page page = new Page();
+        Page page;
         String regexForPagePath = "(?<=[^/])/{1}(?=[^/]).*";
         Pattern pattern = Pattern.compile(regexForPagePath);
         Matcher matcher = pattern.matcher(url);
@@ -127,7 +129,6 @@ public class IndexingServiceImpl implements IndexingService {
         List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
         Set<Page> foundListPageByFirstLemma;
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
-        try {
 
             Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
 
@@ -158,10 +159,6 @@ public class IndexingServiceImpl implements IndexingService {
                 return resultSearch;
             }
 
-        } catch (IOException e) {
-            //todo перехватывает в ApiExceptionHandler
-            throw new RuntimeException();
-        }
 
         return resultSearch;
 
@@ -251,9 +248,10 @@ public class IndexingServiceImpl implements IndexingService {
             if (lemmasListFromQuery.contains(p.getLemma().getLemma())) {
 
                 try {
-                    snippet.append(threadPoolExecutorForSnippet.submit(() -> new FindMatchesSnippets(p.getLemma().getLemma(), p.getPage().getContent()).call()).get());
+                    snippet.append(threadPoolExecutorForSnippet.submit(() ->
+                            new FindMatchesSnippets(p.getLemma().getLemma(), p.getPage().getContent()).call()).get());
                 } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
+                   log.error(e.getMessage(), e);
                 }
             }
 
