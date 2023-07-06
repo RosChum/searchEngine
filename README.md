@@ -67,6 +67,7 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
  
 #### Описание структуры приложения
 </summary>
+Ниже приведена схема проекта, весть frontend размещени в resources 
 
 ````
 +- searchEngine
@@ -133,6 +134,14 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
 </details>
 
 
+<details>
+<summary>
+ 
+#### Подробное описание работы и устройства прокта 
+</summary>
+
+</details>
+В проекте соедржаться пакеты config, controllers, dto, model, repository, services, utility. 
 
 
 
@@ -142,4 +151,4 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
 
 
 ***
-#### Подробное описание работы пакетов 
+
