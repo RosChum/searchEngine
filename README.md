@@ -67,7 +67,7 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
  
 #### Описание структуры приложения
 </summary>
-Ниже приведена схема проекта, весть frontend размещени в resources 
+Ниже приведена схема проекта MVC, весть frontend размещени в resources. 
 
 ````
 +- searchEngine
@@ -128,7 +128,6 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
   |          +- logback-spring.xml
   +- AssetsForReadMe
   +- README.md
-  +- application.yaml
   +- pom.xml
 ````
 </details>
@@ -140,10 +139,34 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
 #### Подробное описание работы и устройства прокта 
 </summary>
 
+В проекте содержаться пакеты config, controllers, dto, model, repository, services, utility и папка resources.<br>
+Подробнее о каждом. 
+
+
+##### Пакет config
+Cодержит три класса MvcConfig, Site, SitesList.<br>
+Класс MvcConfig является конфигурационным классом Spring Boot и содержит единственный переопределенный метод addInterceptors, который добавляет перехватчик RequestResponseLoggerInterceptor для сканирования классов в пакете controllers и записи в журнал поступающих запросов и результатов ответов (не содержание ответа).<br>
+Класс Site предназначен для создания POJO объектов на основании данных, размещенных в разделе indexing-settings файла application.yaml.<br>
+Класс SitesList создает список объектов Site.<br>
+
+
+##### Пакет controllers
+Cодержит два класса ApiController, DefaultController<br>
+Класс ApiController является @RestController, возвращает данные в формате JSON. Содержит методы обрабатывающие get запросы на получение статистики (метод statistics), запуска индексации (метод startIndexing), остановки индексации (метод stopIndexing), поиска (метод search), а также post запрос на добавление/обновление страницы (метод indexPage)<dr>
+Класс DefaultController является @Controller, возвращает HTML страницу index (стартовая страница).<br>
+
+##### Пакет dto
+Содержит dto (Data Transfer Objects) модели searchModel, statistics, StatusRequest. Модель DTO является шаблоном проектирования и предназначена для десереализации данных из базы данных в объект, передаваемый в @Controller для последующей передачи пользователю.<br>
+
+##### Пакет model
+Содержит POJO классы (за исключением ENUM класса IndexingStatus), аннотированные @Entity, тем самым обозначающие JPA (Java Persistence API) о создании и сохранении объектов в базе данных. Приведенные в проекте POJO классы имеют двунаправленные связи @OneToMany и @ManyToOne, связь @ManyToMany реализована через класс Index. Для более быстрого поиска классы Page и Lemma имеют индексацию по полям path и lemma, соответственно. 
+
+##### Пакет repository
+Содержит интерфейсы для взаимодействия с базой данных (формирования запросов к базе данных). Интерфейсы наследованы от JpaRepository, что позволяет использовать запросы из "коробки". Так же интерфейсы содержат кастомные JPQL (Java Persistence query language) запросы, помеченные аннотацией @Query. Отдельные запросы, вносящие изменения в базу данных, помечены аннотацией @Transactional для обеспечения атомарности выполнения запроса и аннотацией @Modifying(clearAutomatically = true), указывающей на модифицированный запрос с автоматической очисткой базового контекста сохранения после записи в базу данных.   
+
+
+
 </details>
-В проекте соедржаться пакеты config, controllers, dto, model, repository, services, utility. 
-
-
 
 </details>
 
