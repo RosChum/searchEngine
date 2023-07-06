@@ -136,7 +136,7 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
 <details>
 <summary>
  
-#### Подробное описание работы и устройства прокта 
+#### Подробное описание работы и устройства проекта 
 </summary>
 
 В проекте содержаться пакеты config, controllers, dto, model, repository, services, utility и папка resources.<br>
