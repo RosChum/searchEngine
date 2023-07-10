@@ -81,11 +81,11 @@ public class SiteIndexing extends RecursiveTask<Site> {
             });
 
         } catch (HttpStatusException ex) {
-            log.error("HTTP status page - " + ex.toString());
+            log.error("HTTP status page - " + ex);
             addPageInDb(url, ex.getStatusCode(), ex.getMessage(), site);
 
         } catch (IOException | InterruptedException exception) {
-            log.error("Site parsing error - " + exception.toString());
+            log.error("Site parsing error - " + exception);
             site.setStatus(IndexingStatus.FAILED);
             site.setLastError("Ошибка индексации: сайт не доступен");
             site.setStatusTime(LocalDateTime.now());

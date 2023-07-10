@@ -1,10 +1,7 @@
 package searchengine.services;
 
-import org.springframework.data.domain.Pageable;
 import searchengine.dto.searchModel.ResultSearch;
 import searchengine.model.Site;
-
-import java.util.List;
 
 public interface IndexingService {
 
@@ -13,8 +10,6 @@ public interface IndexingService {
     void stopIndexing();
 
     boolean statusIndexing();
-
-    List<Site> getListSiteIndexing();
 
     void indexPage(String url, Site site);
 

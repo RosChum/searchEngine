@@ -10,7 +10,7 @@ import java.util.Objects;
 @Entity
 @Setter
 @Getter
-@Table(indexes = @javax.persistence.Index(unique = true,name = "lemma_index",columnList = "lemma"))
+@Table(indexes = @javax.persistence.Index(name = "lemma_index",columnList = "lemma, site_id", unique = true))
 public class Lemma {
 
     @Id

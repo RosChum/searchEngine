@@ -21,8 +21,6 @@ import java.util.Arrays;
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
-    //todo наверное лучше создать свой класс для ошибок, а не использовать StatusRequest
-
     StringBuilder exceptionInfo = new StringBuilder();
 
     @Override

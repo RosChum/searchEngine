@@ -20,7 +20,6 @@ public class Page {
     @JoinColumn(name = "site_id", referencedColumnName = "id", nullable = false)
     private Site site;
 
-    //TODO при добавлении (columnDefinition = "TEXT") возникает ошибка BLOB/TEXT column 'path' used in key specification without a key length
     @Column(name = "path", nullable = false)
     private String path;
 

@@ -1,6 +1,5 @@
 package searchengine.utility;
 
-import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -9,8 +8,8 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Slf4j
-public class FindMatchesSnippets implements Callable {
+
+public class FindMatchesSnippets implements Callable<String> {
     String search;
     String text;
     StringBuilder snippet;
@@ -22,7 +21,7 @@ public class FindMatchesSnippets implements Callable {
     }
 
     @Override
-    public Object call() throws Exception {
+    public String call() throws Exception {
 
         Document document = Jsoup.parse(text);
         String regex = ".{0,30}\\s" + search + "\\s.{0,30}";

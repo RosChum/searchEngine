@@ -98,11 +98,6 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     @Override
-    public List<Site> getListSiteIndexing() {
-        return new ArrayList<>(siteRepository.findAll());
-    }
-
-    @Override
     public void indexPage(String url, Site site) {
         String urlSite = bringingWebsiteAddressToSingleFormat(url);
         Page page;
@@ -130,34 +125,34 @@ public class IndexingServiceImpl implements IndexingService {
         Set<Page> foundListPageByFirstLemma;
         LemmaСonverter lemmaСonverter = new LemmaСonverter();
 
-            Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
+        Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
 
-            for (String lemmas : queryLemmas) {
+        for (String lemmas : queryLemmas) {
 
-                if (site == null || site.isEmpty()) {
+            if (site == null || site.isEmpty()) {
 
-                    foundLemmaListFromQuery.addAll(lemmaRepository.findByLemma(lemmas)); // находим все леммы из запроса
-                } else {
-                    Site site1 = siteRepository.findByUrl(site);
-                    foundLemmaListFromQuery.addAll(lemmaRepository.findLemmasByLemmaAndSite(lemmas, site1));// находим все леммы из запроса на сайте
-                }
-            }
-
-            int countPage = pageRepository.findAll().size();
-            List<Lemma> sortedFoundLemmaListFromQuery = foundLemmaListFromQuery.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
-                    .sorted(Comparator.comparing(Lemma::getFrequency)).toList(); //находим все леммы из запроса, убираем часто встречающиеся, сортируем по возрастанию
-
-            if (sortedFoundLemmaListFromQuery.size() > 0) {
-                foundListPageByFirstLemma = sortedFoundLemmaListFromQuery.stream().flatMap(s -> s.getIndexSearches().stream()
-                        .filter(f -> f.getLemma().getLemma().equals(sortedFoundLemmaListFromQuery.get(0).getLemma()))
-                        .map(f -> f.getPage())).collect(Collectors.toSet()); //находим все страницы по первой лемме, получаем страницы
-
-                resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery, limit, offset);
-
+                foundLemmaListFromQuery.addAll(lemmaRepository.findByLemma(lemmas)); // находим все леммы из запроса
             } else {
-                resultSearch.setResult(false);
-                return resultSearch;
+                Site site1 = siteRepository.findByUrl(site);
+                foundLemmaListFromQuery.addAll(lemmaRepository.findLemmasByLemmaAndSite(lemmas, site1));// находим все леммы из запроса на сайте
             }
+        }
+
+        int countPage = pageRepository.findAll().size();
+        List<Lemma> sortedFoundLemmaListFromQuery = foundLemmaListFromQuery.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
+                .sorted(Comparator.comparing(Lemma::getFrequency)).toList(); //находим все леммы из запроса, убираем часто встречающиеся, сортируем по возрастанию
+
+        if (sortedFoundLemmaListFromQuery.size() > 0) {
+            foundListPageByFirstLemma = sortedFoundLemmaListFromQuery.stream().flatMap(s -> s.getIndexSearches().stream()
+                    .filter(f -> f.getLemma().getLemma().equals(sortedFoundLemmaListFromQuery.get(0).getLemma()))
+                    .map(f -> f.getPage())).collect(Collectors.toSet()); //находим все страницы по первой лемме, получаем страницы
+
+            resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery, limit, offset);
+
+        } else {
+            resultSearch.setResult(false);
+            return resultSearch;
+        }
 
 
         return resultSearch;
@@ -251,7 +246,7 @@ public class IndexingServiceImpl implements IndexingService {
                     snippet.append(threadPoolExecutorForSnippet.submit(() ->
                             new FindMatchesSnippets(p.getLemma().getLemma(), p.getPage().getContent()).call()).get());
                 } catch (InterruptedException | ExecutionException e) {
-                   log.error(e.getMessage(), e);
+                    log.error(e.getMessage(), e);
                 }
             }
 
