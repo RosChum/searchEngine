@@ -111,7 +111,7 @@ java -jar SearchEngine-1.0-SNAPSHOT.jar
   |      |         |   +- ApiExceptionHandler.java
   |      |         |   +- FindMatchesSnippets.java
   |      |         |   +- LemmaСonverter.java
-  |      |         |   +- RequestResponseLoggerInterceptor.java
+  |      |         |   +- HandlerInterceptorLog.java
   |      |         |   +- SiteIndexing.java
   |      |         +- Application.java
   |      |         +- CommandLineRunnerImpl.java
@@ -168,11 +168,11 @@ Cодержит два класса ApiController, DefaultController<br>
 Класс IndexingServiceImpl имплементирован от интерфейса IndexingService. Данный класс реализует логику старта, остановки, обновления/добавления страницы или сайта индексации, также в данном классе реализована логика поиска и формирования итогового DTO объекта, возвращаемого в класс @RestController.
 
 ##### Пакет utility
-Содержит пять классов ApiExceptionHandler,FindMatchesSnippets, LemmaСonverter, RequestResponseLoggerInterceptor, SiteIndexing.<br> 
+Содержит пять классов ApiExceptionHandler,FindMatchesSnippets, LemmaСonverter, HandlerInterceptorLog, SiteIndexing.<br> 
 Класс ApiExceptionHandler отлавливает Exceptions. Отдельно выделены Exceptions, содержащие HTTP статусы 404, 400, 405. Также данный класс обрабатывает все остальные исключения, возвращая HTTP статус 500. Подробное описание исключения, его StackTrace записывается в файл log.txt и выводится в консоль.<br> 
 Класс FindMatchesSnippets имплементирован интерфейсом Callable для возможности создания сниппетов в многопоточной среде. Единственный метод call возвращает сниппеты для DTO объектов.<br> 
 Класс LemmaСonverter имеет единственный мотод convertTextToLemmas, предназначенный для конвертации текста в леммы. Метод convertTextToLemmas возвращает список лемм, найденных в передаваемом методу тексте.<br> 
-Класс RequestResponseLoggerInterceptor является классом перехватчиком на уровне @RestController. Данный класс имплементирован от интерфейса HandlerInterceptor и содержит переопределенные методы реализации preHandle(перехват на уровне поступления запроса), postHandle(перехват на уровне сформированного ответа Resonse), afterCompletion (перехват на уровне после отдачи ответа). Основная реализация методов заключается в логировании поступающих запросов, времени их отработки и возвращаемых ответов. <br> 
+Класс HandlerInterceptorLog является классом перехватчиком на уровне @RestController. Данный класс имплементирован от интерфейса HandlerInterceptor и содержит переопределенные методы реализации preHandle(перехват на уровне поступления запроса), postHandle(перехват на уровне сформированного ответа Resonse), afterCompletion (перехват на уровне после отдачи ответа). Основная реализация методов заключается в логировании поступающих запросов, времени их отработки и возвращаемых ответов. <br> 
 Класс SiteIndexing унаследован от RecursiveTask. Является реализаций ForkJoinPool. Данный класс представляет основную логику парсинга сайтов/страниц и запись получаемой информации в базу данных MySql. <br>
 
 ##### Директория resources

@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 @Slf4j
-public class RequestResponseLoggerInterceptor implements HandlerInterceptor {
+public class HandlerInterceptorLog implements HandlerInterceptor {
 
     private static long start;
 
@@ -27,6 +27,7 @@ public class RequestResponseLoggerInterceptor implements HandlerInterceptor {
                 "RequestURL: " + request.getRequestURL() + "\n" +
                 "ParameterMap: " + parameterMap.toString().trim() + "\n" +
                 "CharacterEncoding: " + request.getCharacterEncoding());
+
 
         return true;
     }

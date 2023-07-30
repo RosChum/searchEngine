@@ -38,14 +38,14 @@ public class SiteIndexing extends RecursiveTask<Site> {
     private HashMap<String, Integer> lemmas;
 
 
-    public SiteIndexing(String url, SiteRepository siteRepository, PageRepository pageRepository, Site site,
-                        LemmaRepository lemmaRepository, IndexRepository indexSearchRepository) {
+    public SiteIndexing(String url, SiteRepository siteRepo, PageRepository pageRepo, Site site,
+                        LemmaRepository lemmaRepo, IndexRepository indexRepo) {
         this.url = url;
-        this.siteRepository = siteRepository;
-        this.pageRepository = pageRepository;
+        this.siteRepository = siteRepo;
+        this.pageRepository = pageRepo;
         this.site = site;
-        this.lemmaRepository = lemmaRepository;
-        this.indexSearchRepository = indexSearchRepository;
+        this.lemmaRepository = lemmaRepo;
+        this.indexSearchRepository = indexRepo;
     }
 
     @Override

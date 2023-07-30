@@ -1,15 +1,9 @@
 package searchengine.config;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.*;
-import searchengine.utility.RequestResponseLoggerInterceptor;
-
-import java.util.List;
+import searchengine.utility.HandlerInterceptorLog;
 
 @Configuration
 @EnableWebMvc
@@ -18,7 +12,7 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new RequestResponseLoggerInterceptor());
+        registry.addInterceptor(new HandlerInterceptorLog());
     }
 
     // Если значение null, то оно не присваивается, можно использовать аннотацию @JsonInclude(JsonInclude.Include.NON_NULL) к определенной переменной

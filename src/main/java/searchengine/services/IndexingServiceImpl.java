@@ -54,7 +54,7 @@ public class IndexingServiceImpl implements IndexingService {
     public void startIndexing() {
         threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(sitesList.getSites().size());
         sitesList.getSites().forEach(siteFromAppProperties -> {
-            siteFromAppProperties.setUrl(bringingWebsiteAddressToSingleFormat(siteFromAppProperties.getUrl()));
+            siteFromAppProperties.setUrl(setUniformFormatWebAddress(siteFromAppProperties.getUrl()));
             if (siteRepository.existsByUrl(siteFromAppProperties.getUrl())) {
                 siteRepository.delete(siteRepository.findByUrl(siteFromAppProperties.getUrl()));
             }
@@ -99,7 +99,7 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public void indexPage(String url, Site site) {
-        String urlSite = bringingWebsiteAddressToSingleFormat(url);
+        String urlSite = setUniformFormatWebAddress(url);
         Page page;
         String regexForPagePath = "(?<=[^/])/{1}(?=[^/]).*";
         Pattern pattern = Pattern.compile(regexForPagePath);
@@ -154,23 +154,22 @@ public class IndexingServiceImpl implements IndexingService {
             return resultSearch;
         }
 
-
         return resultSearch;
 
     }
 
 
-    private void walkAndIndexSite(String urlSite, SiteRepository siteRepository, PageRepository pageRepository, Site site,
-                                  LemmaRepository lemmaRepository, IndexRepository indexSearchRepository) {
+    private void walkAndIndexSite(String url, SiteRepository siteRepo, PageRepository pageRepo, Site site,
+                                  LemmaRepository lemmaRepo, IndexRepository indexRepo) {
         SiteIndexing.stopParsing = false;
-        SiteIndexing siteIndexMap = new SiteIndexing(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
+        SiteIndexing siteIndexMap = new SiteIndexing(url, siteRepo, pageRepo, site, lemmaRepo, indexRepo);
         forkJoinPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
         Site site1 = forkJoinPool.invoke(siteIndexMap);
         if (site1.getStatus() != IndexingStatus.FAILED) {
-            siteRepository.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());
+            siteRepo.updateStatus(site.getName(), IndexingStatus.INDEXED, null, LocalDateTime.now());
         }
         if (site1.getStatus() != IndexingStatus.FAILED && site1.getStatus() != IndexingStatus.INDEXED && SiteIndexing.stopParsing) {
-            siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
+            siteRepo.updateStatus(site.getName(), IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
         }
         forkJoinPool.shutdown();
     }
@@ -278,7 +277,7 @@ public class IndexingServiceImpl implements IndexingService {
     public Site getSiteFromDB(String url) {
 
         Site site = new Site();
-        String urlSite = bringingWebsiteAddressToSingleFormat(url);
+        String urlSite = setUniformFormatWebAddress(url);
         String regexSite = "h.*//[^/]*";
         Pattern pattern = Pattern.compile(regexSite);
         Matcher matcher = pattern.matcher(urlSite);
@@ -288,7 +287,7 @@ public class IndexingServiceImpl implements IndexingService {
         return site;
     }
 
-    private String bringingWebsiteAddressToSingleFormat(String url) {
+    private String setUniformFormatWebAddress(String url) {
         return url.replace("www.", "");
     }
 
