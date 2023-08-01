@@ -70,7 +70,7 @@ public class IndexingServiceImpl implements IndexingService {
             threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository,
                     pageRepository, site, lemmaRepository, indexSearchRepository));
 
-            throw new IllegalArgumentException();
+
         });
 
         threadPoolExecutor.shutdown();
