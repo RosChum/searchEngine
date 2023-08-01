@@ -22,7 +22,7 @@ public class HandlerInterceptorLog implements HandlerInterceptor {
         for (Map.Entry<String, String[]> s : stringMap.entrySet()) {
             parameterMap.append(s.getKey() + ": " + Arrays.toString(s.getValue())).append("\n");
         }
-        log.info("Logging request:\n" + request + "\n" +
+        log.debug("Logging request:\n" + request + "\n" +
                 "Method: " + request.getMethod() + "\n" +
                 "RequestURL: " + request.getRequestURL() + "\n" +
                 "ParameterMap: " + parameterMap.toString().trim() + "\n" +
@@ -35,12 +35,12 @@ public class HandlerInterceptorLog implements HandlerInterceptor {
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
         long timeProcessing = System.currentTimeMillis() - start;
-        log.info("Time processing " + request + " - " + timeProcessing + " ms" + "\n");
+        log.debug("Time processing " + request + " - " + timeProcessing + " ms" + "\n");
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        log.info("Logging response to " + request + ":\n" + response + "\n" +
+        log.debug("Logging response to " + request + ":\n" + response + "\n" +
                 "Status: " + response.getStatus() + "\n" +
                 "ContentType: " + response.getContentType() + "\n" +
                 "CharacterEncoding: " + response.getCharacterEncoding() + "\n");

@@ -15,13 +15,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
 import searchengine.dto.StatusRequest;
 
-import java.util.Arrays;
-
 @Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
-    StringBuilder exceptionInfo = new StringBuilder();
 
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
@@ -72,13 +69,13 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private void writeToLog(Exception exception) {
-        Arrays.stream(exception.getStackTrace()).forEach(element -> exceptionInfo.append(element).append("\n"));
+
         if (exception instanceof MissingServletRequestParameterException
                 || exception instanceof HttpRequestMethodNotSupportedException
                 || exception instanceof NoHandlerFoundException) {
-            log.error("Request error :" + exceptionInfo);
+            log.error("Request error : " + exception.getMessage(), exception);
         } else {
-            log.error("Exception :" + exceptionInfo);
+            log.error("Exception : " + exception.getMessage(), exception);
         }
 
     }

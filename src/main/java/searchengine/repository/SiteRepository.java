@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.model.IndexingStatus;
 import searchengine.model.Site;
@@ -22,13 +23,13 @@ public interface SiteRepository extends JpaRepository<Site, Integer> {
 
     boolean existsByUrl(String url);
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     @Query("UPDATE Site s set s.status = :status, s.lastError = :error, s.statusTime = :time WHERE s.name = :name")
     @Modifying(clearAutomatically = true)
     void updateStatus(@Param("name") String name, @Param("status") IndexingStatus status, @Param("error")
             String error, @Param("time") LocalDateTime statusTime);
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     @Query("UPDATE Site s set s.statusTime = :time WHERE s.name = :name")
     @Modifying(clearAutomatically = true)
     void updateStatusTime(@Param("name") String name, @Param("time") LocalDateTime statusTime);

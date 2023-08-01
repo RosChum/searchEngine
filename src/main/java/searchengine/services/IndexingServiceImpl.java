@@ -66,9 +66,11 @@ public class IndexingServiceImpl implements IndexingService {
             site.setLastError(null);
             siteRepository.save(site);
 
+
             threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository,
                     pageRepository, site, lemmaRepository, indexSearchRepository));
 
+            throw new IllegalArgumentException();
         });
 
         threadPoolExecutor.shutdown();

@@ -8,17 +8,57 @@
             </Pattern>
         </layout>
     </appender>
+
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>log.txt</file>
+        <file>.\\logFiles\\log.txt</file>
         <append>false</append>
         <encoder>
             <pattern>%(%d{ISO8601}) %-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- LOG everything at INFO level -->
-    <root level="info">
-        <appender-ref ref="Console" />
-        <appender-ref ref="FILE" />
+    <appender name="HandlerInterceptorLog" class="ch.qos.logback.core.FileAppender">
+        <file>.\\logFiles\\handlerInterceptorLog.txt</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%(%d{ISO8601}) %-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="hibernateLog" class="ch.qos.logback.core.FileAppender">
+        <file>.\\logFiles\\hibernateLog.txt</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%(%d{ISO8601}) %-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="hikariLog" class="ch.qos.logback.core.FileAppender">
+        <file>.\\logFiles\\hikariLog.txt</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%(%d{ISO8601}) %-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.zaxxer.hikari" level="DEBUG" additivity = "false">
+        <appender-ref ref="hikariLog"/>
+    </logger>
+
+    <logger name="org.hibernate" level="INFO" additivity = "false">
+        <appender-ref ref="hibernateLog"/>
+    </logger>
+
+    <logger name="searchengine.utility.HandlerInterceptorLog" level="DEBUG" additivity = "false">
+        <appender-ref ref="HandlerInterceptorLog"/>
+    </logger>
+
+    <root level="Error">
+        <appender-ref ref="FILE"/>
+
     </root>
+    <root level="info">
+        <appender-ref ref="Console"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
 </configuration>
