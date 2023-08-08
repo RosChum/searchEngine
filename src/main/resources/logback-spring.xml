@@ -10,7 +10,7 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>.\\logFiles\\log.txt</file>
+        <file>.\\logFiles\\mainLog.txt</file>
         <append>false</append>
         <encoder>
             <pattern>%(%d{ISO8601}) %-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
@@ -32,17 +32,14 @@
         </encoder>
     </appender>
 
-    <appender name="hikariLog" class="ch.qos.logback.core.FileAppender">
-        <file>.\\logFiles\\hikariLog.txt</file>
+    <appender name="indexingServiceLog" class="ch.qos.logback.core.FileAppender">
+        <file>.\\logFiles\\indexingServiceLog.txt</file>
         <append>false</append>
         <encoder>
             <pattern>%(%d{ISO8601}) %-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <logger name="com.zaxxer.hikari" level="DEBUG" additivity = "false">
-        <appender-ref ref="hikariLog"/>
-    </logger>
 
     <logger name="org.hibernate" level="INFO" additivity = "false">
         <appender-ref ref="hibernateLog"/>
@@ -52,10 +49,10 @@
         <appender-ref ref="HandlerInterceptorLog"/>
     </logger>
 
-    <root level="Error">
-        <appender-ref ref="FILE"/>
+    <logger name="searchengine.services.IndexingServiceImpl" level="INFO" additivity = "false">
+        <appender-ref ref="indexingServiceLog"/>
+    </logger>
 
-    </root>
     <root level="info">
         <appender-ref ref="Console"/>
         <appender-ref ref="FILE"/>

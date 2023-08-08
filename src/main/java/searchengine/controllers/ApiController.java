@@ -99,7 +99,7 @@ public class ApiController {
         ResultSearch resultSearch = indexingService.searchPage(query, site, limit, offset);
         if (!resultSearch.isResult()) {
             statusRequest.setResult(false);
-            statusRequest.setError("По указанному запросы страницы не найдены");
+            statusRequest.setError("По указанному запросу страницы не найдены");
             return ResponseEntity.ok(statusRequest);
         }
 

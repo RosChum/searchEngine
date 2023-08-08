@@ -12,12 +12,9 @@ import java.util.Locale;
 @Slf4j
 public class LemmaСonverter {
 
-
     private HashMap<String, Integer> result;
 
-
     public HashMap<String, Integer> convertTextToLemmas(String text) {
-
         result = new HashMap<>();
         LuceneMorphology luceneMorph = null;
         try {
@@ -25,8 +22,6 @@ public class LemmaСonverter {
         } catch (IOException ex) {
             log.error(ex.getMessage(), ex);
         }
-
-
         String[] splitText = text.toLowerCase(Locale.ROOT).replaceAll("[^А-Яа-яЁё\\s]", "")
                 .split("\\s");
 
@@ -41,9 +36,7 @@ public class LemmaСonverter {
                         } else {
                             result.put(word, result.get(word) + 1);
                         }
-
                     });
-
         }
 
         return result;

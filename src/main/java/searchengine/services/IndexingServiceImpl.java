@@ -66,10 +66,9 @@ public class IndexingServiceImpl implements IndexingService {
             site.setLastError(null);
             siteRepository.save(site);
 
-
             threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository,
                     pageRepository, site, lemmaRepository, indexSearchRepository));
-
+            log.info("Start indexing " + site.getUrl());
 
         });
 
@@ -84,7 +83,7 @@ public class IndexingServiceImpl implements IndexingService {
             threadPoolExecutor.shutdown();
             SiteIndexing.stopParsing = true;
             ForkJoinPool.commonPool().shutdownNow();
-
+            log.info("User stopped indexing");
         }
 
     }
@@ -101,12 +100,12 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public void indexPage(String url, Site site) {
+        log.info("User indexing page " + url);
         String urlSite = setUniformFormatWebAddress(url);
         Page page;
         String regexForPagePath = "(?<=[^/])/{1}(?=[^/]).*";
         Pattern pattern = Pattern.compile(regexForPagePath);
         Matcher matcher = pattern.matcher(url);
-
         while (matcher.find()) {
             page = pageRepository.findByPathAndSite(matcher.group(), site);
 
@@ -115,49 +114,36 @@ public class IndexingServiceImpl implements IndexingService {
             }
 
         }
-
         walkAndIndexSite(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
-
     }
 
     @Override
     public ResultSearch searchPage(String query, String site, int limit, int offset) {
-        ResultSearch resultSearch = new ResultSearch();
+        log.info("Start search -" + query + ", Site " + site);
         List<Lemma> foundLemmaListFromQuery = new ArrayList<>();
-        Set<Page> foundListPageByFirstLemma;
-        LemmaСonverter lemmaСonverter = new LemmaСonverter();
-
-        Set<String> queryLemmas = lemmaСonverter.convertTextToLemmas(query).keySet();
-
+        Set<String> queryLemmas = new LemmaСonverter().convertTextToLemmas(query).keySet();
         for (String lemmas : queryLemmas) {
-
             if (site == null || site.isEmpty()) {
-
-                foundLemmaListFromQuery.addAll(lemmaRepository.findByLemma(lemmas)); // находим все леммы из запроса
+                foundLemmaListFromQuery.addAll(lemmaRepository.findByLemma(lemmas));
             } else {
                 Site site1 = siteRepository.findByUrl(site);
-                foundLemmaListFromQuery.addAll(lemmaRepository.findLemmasByLemmaAndSite(lemmas, site1));// находим все леммы из запроса на сайте
+                foundLemmaListFromQuery.addAll(lemmaRepository.findLemmasByLemmaAndSite(lemmas, site1));
             }
         }
-
-        int countPage = pageRepository.findAll().size();
-        List<Lemma> sortedFoundLemmaListFromQuery = foundLemmaListFromQuery.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
-                .sorted(Comparator.comparing(Lemma::getFrequency)).toList(); //находим все леммы из запроса, убираем часто встречающиеся, сортируем по возрастанию
-
-        if (sortedFoundLemmaListFromQuery.size() > 0) {
-            foundListPageByFirstLemma = sortedFoundLemmaListFromQuery.stream().flatMap(s -> s.getIndexSearches().stream()
-                    .filter(f -> f.getLemma().getLemma().equals(sortedFoundLemmaListFromQuery.get(0).getLemma()))
-                    .map(f -> f.getPage())).collect(Collectors.toSet()); //находим все страницы по первой лемме, получаем страницы
-
-            resultSearch = searchMatches(foundListPageByFirstLemma, sortedFoundLemmaListFromQuery, limit, offset);
-
-        } else {
-            resultSearch.setResult(false);
-            return resultSearch;
+        List<Lemma> sortedFoundLemmaListFromQuery = filterAndSortLemmasFromQuery(foundLemmaListFromQuery);
+        Set<Page> listPageByFirstLemma = foundListPageByFirstLemma(sortedFoundLemmaListFromQuery);
+        if (sortedFoundLemmaListFromQuery.isEmpty()) {
+            log.info("Finish search - not found on request");
+            return new ResultSearch();
         }
+        ResultSearch resultSearch = searchMatches(listPageByFirstLemma, sortedFoundLemmaListFromQuery, limit, offset);
 
+        if (resultSearch.getData().isEmpty()) {
+            resultSearch.setResult(false);
+            log.info("Finish search - not found on request");
+        }
+        log.info("Finish search: " +  "Status - " + resultSearch.isResult() + ", Count - " + resultSearch.getCount() + ", Site - " + site);
         return resultSearch;
-
     }
 
 
@@ -174,6 +160,7 @@ public class IndexingServiceImpl implements IndexingService {
             siteRepo.updateStatus(site.getName(), IndexingStatus.FAILED, "Индексация остановлена пользователем", LocalDateTime.now());
         }
         forkJoinPool.shutdown();
+        log.info("Finish indexing " + site.getUrl());
     }
 
     private ResultSearch searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery, int limit, int offset) {
@@ -184,23 +171,17 @@ public class IndexingServiceImpl implements IndexingService {
             Set<String> lemmasSetByPage = page.getIndexSearches().stream().map(f -> f.getLemma().getLemma()).collect(Collectors.toSet());
             if (!lemmasSetByPage.containsAll(getLemmasStringType)) {
                 workingListPage.remove(page);
-
             }
-
         }
         return getResultSearch(workingListPage, getLemmasStringType, limit, offset);
 
     }
 
     private ResultSearch getResultSearch(Set<Page> pageSet, Set<String> lemmasListFromQuery, int limit, int offset) {
-
         ResultSearch resultSearch = new ResultSearch();
         Set<DtoSearchPageInfo> findPage = new HashSet<>();
-
         for (Page page : pageSet) {
-
             Set<Index> indexSearches = page.getIndexSearches().stream().collect(Collectors.toSet());
-
             Document document = Jsoup.parse(page.getContent());
 
             DtoSearchPageInfo dtoSearchPageInfo = new DtoSearchPageInfo();
@@ -210,11 +191,9 @@ public class IndexingServiceImpl implements IndexingService {
             dtoSearchPageInfo.setSnippet(getSnippet(indexSearches, lemmasListFromQuery));
             dtoSearchPageInfo.setTitle(getTitle(document));
             dtoSearchPageInfo.setUri(page.getPath());
-
             findPage.add(dtoSearchPageInfo);
 
         }
-
         setRelativeRelevance(findPage);
         resultSearch.setCount(findPage.size());
         resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).skip(offset).limit(limit).collect(Collectors.toList()));
@@ -223,16 +202,12 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     private double getAbsoluteRelevance(Set<Index> indexSearches, Set<String> lemmasListFromQuery) {
-
         AtomicInteger absoluteRelevance = new AtomicInteger();
-
         indexSearches.forEach(i -> {
-
             if (lemmasListFromQuery.contains(i.getLemma().getLemma()))
                 absoluteRelevance.addAndGet(i.getRank());
 
         });
-
         return absoluteRelevance.doubleValue();
     }
 
@@ -240,9 +215,7 @@ public class IndexingServiceImpl implements IndexingService {
         ThreadPoolExecutor threadPoolExecutorForSnippet = (ThreadPoolExecutor) Executors.newFixedThreadPool(12);
         StringBuilder snippet = new StringBuilder();
         indexSearches.forEach(p -> {
-
             if (lemmasListFromQuery.contains(p.getLemma().getLemma())) {
-
                 try {
                     snippet.append(threadPoolExecutorForSnippet.submit(() ->
                             new FindMatchesSnippets(p.getLemma().getLemma(), p.getPage().getContent()).call()).get());
@@ -261,23 +234,17 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     private void setRelativeRelevance(Set<DtoSearchPageInfo> findPage) {
-
         List<DtoSearchPageInfo> workList = findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance)).collect(Collectors.toList());
-
         double tmp;
-
         for (DtoSearchPageInfo dtoSearchPageInfo : workList) {
-
             tmp = dtoSearchPageInfo.getRelevance() / workList.get(workList.size() - 1).getRelevance();
             dtoSearchPageInfo.setRelevance(Math.floor(tmp * 100) / 100);
         }
-
 
     }
 
     @Override
     public Site getSiteFromDB(String url) {
-
         Site site = new Site();
         String urlSite = setUniformFormatWebAddress(url);
         String regexSite = "h.*//[^/]*";
@@ -293,4 +260,20 @@ public class IndexingServiceImpl implements IndexingService {
         return url.replace("www.", "");
     }
 
+    private List<Lemma> filterAndSortLemmasFromQuery(List<Lemma> lemmaListFromQuery) {
+        int countPage = pageRepository.findAll().size();
+
+        return lemmaListFromQuery.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
+                .sorted(Comparator.comparing(Lemma::getFrequency)).toList();
+    }
+
+    private Set<Page> foundListPageByFirstLemma(List<Lemma> lemmaList) {
+        if (lemmaList.size() > 0) {
+            return lemmaList.stream().flatMap(s -> s.getIndexSearches().stream()
+                    .filter(f -> f.getLemma().getLemma().equals(lemmaList.get(0).getLemma()))
+                    .map(f -> f.getPage())).collect(Collectors.toSet());
+
+        } else return null;
+
+    }
 }

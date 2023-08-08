@@ -11,6 +11,4 @@ public class ResultSearch {
     private int count;
     private List<DtoSearchPageInfo> data;
 
-
-
 }

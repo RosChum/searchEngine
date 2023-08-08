@@ -61,18 +61,13 @@ public class SiteIndexing extends RecursiveTask<Site> {
                 if (checkURL(childUrl, site)) {
                     addPageInDb(childUrl, responseCode.statusCode(), document.toString(), site);
                     updateStatusTimeToSite(site.getName());
-
-                    if (responseCode.statusCode() == 200) {
-                        addLemmaDB(document.text(), site);
-                    }
+                    addLemmaDB(document.text(), site);
 
                     SiteIndexing siteIndexMap = new SiteIndexing(childUrl, siteRepository, pageRepository, site,
                             lemmaRepository, indexSearchRepository);
-
                     if (stopParsing) {
                         task.clear();
                         return;
-//                        ForkJoinWorkerThread.currentThread().interrupt();
                     } else {
                         siteIndexMap.fork();
                         task.add(siteIndexMap);
@@ -85,15 +80,8 @@ public class SiteIndexing extends RecursiveTask<Site> {
             addPageInDb(url, ex.getStatusCode(), ex.getMessage(), site);
 
         } catch (IOException | InterruptedException exception) {
-            log.error("Site parsing error - " + exception);
-            site.setStatus(IndexingStatus.FAILED);
-            site.setLastError("Ошибка индексации: сайт не доступен");
-            site.setStatusTime(LocalDateTime.now());
-            siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Ошибка индексации: сайт не доступен", LocalDateTime.now());
-            return site;
-
+            return setSiteStatusParsing(exception);
         }
-
         for (SiteIndexing site1 : task) {
             site1.join();
         }
@@ -119,31 +107,25 @@ public class SiteIndexing extends RecursiveTask<Site> {
     }
 
     private synchronized void addLemmaDB(String text, Site site) {
-
         if (!stopParsing) {
-
-                lemmas = lemmaСonverter.convertTextToLemmas(text);
-                lemmas.forEach((keyLemma, value) -> {
-                    lemma = new Lemma();
-                    lemma.setLemma(keyLemma);
-                    lemma.setSite(site);
-                    lemma.setFrequency(1);
-                    if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
-                        lemmaRepository.updateFrequency(keyLemma, site);
-                        lemma = lemmaRepository.findByLemmaAndSite(keyLemma, site);
-                        addIndexDB(lemma, page, value);
-                    } else {
-                        lemmaRepository.save(lemma);
-                        addIndexDB(lemma, page, value);
-
-                    }
-
-                });
-
+            lemmas = lemmaСonverter.convertTextToLemmas(text);
+            lemmas.forEach((keyLemma, value) -> {
+                lemma = new Lemma();
+                lemma.setLemma(keyLemma);
+                lemma.setSite(site);
+                lemma.setFrequency(1);
+                if (lemmaRepository.existsLemmaByLemmaAndSite(keyLemma, site)) {
+                    lemmaRepository.updateFrequency(keyLemma, site);
+                    lemma = lemmaRepository.findByLemmaAndSite(keyLemma, site);
+                    addIndexDB(lemma, page, value);
+                } else {
+                    lemmaRepository.save(lemma);
+                    addIndexDB(lemma, page, value);
+                }
+            });
         } else {
             lemmas.clear();
         }
-
     }
 
     private synchronized void addIndexDB(Lemma lemma, Page page, int value) {
@@ -158,6 +140,15 @@ public class SiteIndexing extends RecursiveTask<Site> {
         siteRepository.updateStatusTime(siteName, LocalDateTime.now());
     }
 
+    private Site setSiteStatusParsing(Exception exception) {
+        log.error("Site parsing error - " + exception);
+        site.setStatus(IndexingStatus.FAILED);
+        site.setLastError("Ошибка индексации: сайт не доступен");
+        site.setStatusTime(LocalDateTime.now());
+        siteRepository.updateStatus(site.getName(), IndexingStatus.FAILED, "Ошибка индексации: сайт не доступен", LocalDateTime.now());
+
+        return site;
+    }
 
 }
 
