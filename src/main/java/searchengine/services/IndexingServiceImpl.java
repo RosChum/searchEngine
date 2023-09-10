@@ -69,12 +69,10 @@ public class IndexingServiceImpl implements IndexingService {
             threadPoolExecutor.submit(() -> walkAndIndexSite(site.getUrl(), siteRepository,
                     pageRepository, site, lemmaRepository, indexSearchRepository));
             log.info("Start indexing " + site.getUrl());
-
         });
 
         threadPoolExecutor.shutdown();
         threadPoolExecutor.getQueue().clear();
-
     }
 
     @Override
@@ -85,7 +83,6 @@ public class IndexingServiceImpl implements IndexingService {
             ForkJoinPool.commonPool().shutdownNow();
             log.info("User stopped indexing");
         }
-
     }
 
     @Override
@@ -108,11 +105,9 @@ public class IndexingServiceImpl implements IndexingService {
         Matcher matcher = pattern.matcher(url);
         while (matcher.find()) {
             page = pageRepository.findByPathAndSite(matcher.group(), site);
-
             if (pageRepository.existsByPathAndSite(matcher.group(), site)) {
                 pageRepository.delete(page);
             }
-
         }
         walkAndIndexSite(urlSite, siteRepository, pageRepository, site, lemmaRepository, indexSearchRepository);
     }
@@ -143,6 +138,7 @@ public class IndexingServiceImpl implements IndexingService {
             log.info("Finish search - not found on request");
         }
         log.info("Finish search: " +  "Status - " + resultSearch.isResult() + ", Count - " + resultSearch.getCount() + ", Site - " + site);
+
         return resultSearch;
     }
 
@@ -165,6 +161,7 @@ public class IndexingServiceImpl implements IndexingService {
 
     private ResultSearch searchMatches(Set<Page> foundListPageByFirstLemma, List<Lemma> sortedFoundLemmaListFromQuery, int limit, int offset) {
         Set<String> getLemmasStringType = new HashSet<>();
+
         Set<Page> workingListPage = new HashSet<>(Set.copyOf(foundListPageByFirstLemma));
         getLemmasStringType.addAll(sortedFoundLemmaListFromQuery.stream().map(Lemma::getLemma).collect(Collectors.toSet()));
         for (Page page : foundListPageByFirstLemma) {
@@ -173,6 +170,7 @@ public class IndexingServiceImpl implements IndexingService {
                 workingListPage.remove(page);
             }
         }
+
         return getResultSearch(workingListPage, getLemmasStringType, limit, offset);
 
     }
@@ -196,7 +194,8 @@ public class IndexingServiceImpl implements IndexingService {
         }
         setRelativeRelevance(findPage);
         resultSearch.setCount(findPage.size());
-        resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance).reversed()).skip(offset).limit(limit).collect(Collectors.toList()));
+        resultSearch.setData(findPage.stream().sorted(Comparator.comparing(DtoSearchPageInfo::getRelevance)
+                .reversed()).skip(offset).limit(limit).collect(Collectors.toList()));
         resultSearch.setResult(resultSearch.getData().size() > 0);
         return resultSearch;
     }
@@ -204,9 +203,9 @@ public class IndexingServiceImpl implements IndexingService {
     private double getAbsoluteRelevance(Set<Index> indexSearches, Set<String> lemmasListFromQuery) {
         AtomicInteger absoluteRelevance = new AtomicInteger();
         indexSearches.forEach(i -> {
-            if (lemmasListFromQuery.contains(i.getLemma().getLemma()))
+            if (lemmasListFromQuery.contains(i.getLemma().getLemma())) {
                 absoluteRelevance.addAndGet(i.getRank());
-
+            }
         });
         return absoluteRelevance.doubleValue();
     }
@@ -263,8 +262,10 @@ public class IndexingServiceImpl implements IndexingService {
     private List<Lemma> filterAndSortLemmasFromQuery(List<Lemma> lemmaListFromQuery) {
         int countPage = pageRepository.findAll().size();
 
-        return lemmaListFromQuery.stream().filter(lemma -> lemma.getFrequency() < countPage * 0.37)
-                .sorted(Comparator.comparing(Lemma::getFrequency)).toList();
+        return lemmaListFromQuery.stream()
+                .filter(lemma -> lemma.getFrequency() < countPage * 0.37)
+                .sorted(Comparator.comparing(Lemma::getFrequency))
+                .toList();
     }
 
     private Set<Page> foundListPageByFirstLemma(List<Lemma> lemmaList) {
@@ -272,8 +273,7 @@ public class IndexingServiceImpl implements IndexingService {
             return lemmaList.stream().flatMap(s -> s.getIndexSearches().stream()
                     .filter(f -> f.getLemma().getLemma().equals(lemmaList.get(0).getLemma()))
                     .map(f -> f.getPage())).collect(Collectors.toSet());
-
-        } else return null;
-
+        }
+        return null;
     }
 }
